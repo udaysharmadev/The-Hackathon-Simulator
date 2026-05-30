@@ -14,8 +14,8 @@ export const JUDGES: Judge[] = [
     id: 'judge-builder',
     name: 'Uday Sharma',
     avatar: '🔥',
-    title: 'Indie Hacker & Product Builder',
-    expertise: ['MVP Scoping', 'Rapid Prototyping', 'User Validation', 'Product-Led Growth'],
+    title: 'EdTech Creator & Hackathon Specialist',
+    expertise: ['MVP Scoping', 'Rapid Prototyping', 'EdTech Products', 'User Validation', 'Product Practicality'],
     personality: 'technical',
     scoringWeights: {
       innovation: 0.25,
@@ -26,10 +26,10 @@ export const JUDGES: Judge[] = [
   },
   {
     id: 'judge-founder',
-    name: 'Sarah Park',
+    name: 'Bart',
     avatar: '🚀',
-    title: 'Startup Accelerator Partner',
-    expertise: ['Market Sizing', 'Growth Metrics', 'Elevator Pitches', 'Venture Viability'],
+    title: 'Startup Founder',
+    expertise: ['Startup Building', 'Product Strategy', 'Growth Hack', 'Product-Market Fit', 'Customer Discovery'],
     personality: 'creative',
     scoringWeights: {
       innovation: 0.35,
@@ -40,10 +40,10 @@ export const JUDGES: Judge[] = [
   },
   {
     id: 'judge-design',
-    name: 'Maya Chen',
+    name: 'Nishika',
     avatar: '🎨',
-    title: 'Product Design Director',
-    expertise: ['User Experience', 'Interaction Design', 'Accessibility Scales', 'Visual Hierarchy'],
+    title: 'Corporate Product Designer / UI-UX Specialist',
+    expertise: ['UI Design', 'UX Design', 'Accessibility Scales', 'User Flows', 'Design Systems'],
     personality: 'encouraging',
     scoringWeights: {
       innovation: 0.10,
@@ -54,10 +54,10 @@ export const JUDGES: Judge[] = [
   },
   {
     id: 'judge-investor',
-    name: 'Raj Malhotra',
-    avatar: '🦈',
-    title: 'Venture Capital Partner',
-    expertise: ['Unit Economics', 'Defensible Moats', 'Monetization Strategy', 'Market Scale'],
+    name: 'Sejal',
+    avatar: '📊',
+    title: 'Business Analyst',
+    expertise: ['Business Strategy', 'Market Analysis', 'Revenue Models', 'Data-Driven Decisions', 'Process Optimization'],
     personality: 'tough',
     scoringWeights: {
       innovation: 0.15,
@@ -68,11 +68,11 @@ export const JUDGES: Judge[] = [
   },
   {
     id: 'judge-chaos',
-    name: 'ByteLord.exe',
-    avatar: '👾',
-    title: 'Supreme Compiler Entity',
-    expertise: ['Chaos Engineering', 'Null Pointer Panic', 'Meme Optimization', 'Glitch Architecture'],
-    personality: 'creative',
+    name: 'Jitu',
+    avatar: '🎓',
+    title: 'Professor & Academic Mentor',
+    expertise: ['Computer Science Fundamentals', 'Software Engineering', 'System Design', 'Technical Feasibility', 'Learning Outcomes'],
+    personality: 'technical',
     scoringWeights: {
       innovation: 0.25,
       execution: 0.25,

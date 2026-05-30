@@ -105,7 +105,7 @@ export function classifyProjectArchetype(params: {
       id: "hustler",
       name: "The Hustler",
       subtitle: "Unit Economics Monetizer",
-      description: "Margins, acquisition loops, and exit metrics are all you care about. Your project is designed as a cash-generating engine from Day 1, utilizing a highly transactional business model. Your pitch presentation is flawless, and Raj Malhotra is taking notes on your CAC calculations, even if the database is currently running on a local JSON file.",
+      description: "Margins, acquisition loops, and exit metrics are all you care about. Your project is designed as a cash-generating engine from Day 1, utilizing a highly transactional business model. Your pitch presentation is flawless, and Sejal is taking notes on your financial projections, even if the database is currently running on a local JSON file.",
       colorClass: "border-emerald-900 bg-emerald-50 text-emerald-900",
       radarStats: {
         techDepth: 35,
@@ -123,7 +123,7 @@ export function classifyProjectArchetype(params: {
       id: "visionary",
       name: "The Visionary",
       subtitle: "Future Disruption Synthesizer",
-      description: "You are building the future, today. By selecting a highly disruptive USP (AI-powered, Sustainable, or Community-first) and matching it with creative problem vectors, you aim to reshape campus life. The project is highly creative, and Sarah Park is nodding along in agreement, even if the actual database backend is slightly unfinished.",
+      description: "You are building the future, today. By selecting a highly disruptive USP (AI-powered, Sustainable, or Community-first) and matching it with creative problem vectors, you aim to reshape campus life. The project is highly creative, and Bart is nodding along in agreement, even if the actual database backend is slightly unfinished.",
       colorClass: "border-blue-900 bg-blue-50 text-blue-900",
       radarStats: {
         techDepth: 70,

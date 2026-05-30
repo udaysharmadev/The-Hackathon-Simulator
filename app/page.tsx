@@ -115,7 +115,7 @@ export default function LandingPage() {
       id: 'judge-builder',
       name: 'Uday Sharma',
       avatar: '🔥',
-      title: 'Indie Hacker & Product Builder',
+      title: 'EdTech Creator & Hackathon Specialist',
       personality: 'technical',
     };
 
