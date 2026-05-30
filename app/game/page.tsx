@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGameStore, STAGE_ORDER } from "@/store/gameStore";
 import GameLayout from "@/components/game/GameLayout";
@@ -67,8 +68,10 @@ function GameplayStageCard({
   subtitle: string;
   children?: React.ReactNode;
 }) {
-  const { nextStage, previousStage, difficulty, globalTimeRemaining, activeModifiers, gameMode } = useGameStore();
+  const router = useRouter();
+  const { nextStage, previousStage, difficulty, globalTimeRemaining, activeModifiers, gameMode, resetGame } = useGameStore();
   const currentIndex = STAGE_ORDER.indexOf(stageKey);
+  const [isAbortOpen, setIsAbortOpen] = useState(false);
 
   const formatTime = (sec: number) => {
     const mins = Math.floor(sec / 60);
@@ -141,20 +144,42 @@ function GameplayStageCard({
         {children && <div className="mb-8 w-full">{children}</div>}
 
         {/* Tactile navigation controls */}
-        <div className="flex items-center justify-between border-t border-border pt-6 mt-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              playMutedClick();
-              previousStage();
-            }}
-            onMouseEnter={playSubtleHover}
-            disabled={currentIndex === 0 || stageKey === 'results'}
-            className="font-mono text-xs h-8 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none"
-          >
-            &lt; BACK
-          </Button>
+        <div className="flex items-center justify-between border-t border-border pt-6 mt-6 gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                playMutedClick();
+                if (currentIndex === 0) {
+                  resetGame();
+                  router.push("/");
+                } else {
+                  previousStage();
+                }
+              }}
+              onMouseEnter={playSubtleHover}
+              disabled={stageKey === 'results'}
+              className="font-mono text-xs h-8 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none cursor-pointer"
+            >
+              &lt; BACK
+            </Button>
+
+            {currentIndex >= 1 && stageKey !== 'results' && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  playMutedClick();
+                  setIsAbortOpen(true);
+                }}
+                onMouseEnter={playSubtleHover}
+                className="font-mono text-xs h-8 bg-red-50/50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 hover:border-red-600 transition-all duration-150 cursor-pointer"
+              >
+                ABORT_SIM
+              </Button>
+            )}
+          </div>
 
           <div className="hidden sm:flex gap-1.5">
             {STAGE_ORDER.map((s, idx) => (
@@ -179,12 +204,60 @@ function GameplayStageCard({
             }}
             onMouseEnter={playSubtleHover}
             disabled={currentIndex === STAGE_ORDER.length - 1 || !difficulty}
-            className="font-mono text-xs h-8 border border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none"
+            className="font-mono text-xs h-8 border border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none cursor-pointer"
           >
             CONTINUE &gt;
           </Button>
         </div>
       </div>
+
+      {/* Abort simulation confirmation modal */}
+      <AnimatePresence>
+        {isAbortOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm bg-card border border-neutral-300 rounded-lg shadow-2xl p-6 m-4 font-mono text-xs text-left"
+            >
+              <h3 className="text-sm font-black uppercase text-red-600 mb-2 flex items-center gap-1.5">
+                🚨 WARNING: ABORT_SIMULATION.EXE
+              </h3>
+              <p className="text-neutral-600 mb-6 font-sans font-light leading-relaxed">
+                Are you sure you want to abort the current simulation? All compile progress, feature pipelines, and current scores will be permanently deleted.
+              </p>
+              
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    playMutedClick();
+                    setIsAbortOpen(false);
+                  }}
+                  className="font-mono text-[10px] h-8 cursor-pointer"
+                >
+                  CANCEL
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    playMutedClick();
+                    resetGame();
+                    setIsAbortOpen(false);
+                    router.push("/");
+                  }}
+                  className="font-mono text-[10px] h-8 bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                >
+                  YES, ABORT
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
