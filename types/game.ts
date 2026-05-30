@@ -17,6 +17,21 @@ export type GamePhase =
   | 'JUDGING'
   | 'RESULTS';
 
+/** All possible stages of the hackathon simulation conditional engine */
+export type GameStage =
+  | 'difficulty'
+  | 'problemReveal'
+  | 'solutionDirection'
+  | 'techStack'
+  | 'usp'
+  | 'features'
+  | 'mentor'
+  | 'businessModel'
+  | 'pitchPrep'
+  | 'judgeSpin'
+  | 'judging'
+  | 'results';
+
 // ─── Core Entities ──────────────────────────────────────────────────────────────
 
 /** A hackathon problem statement that teams must solve */
@@ -156,24 +171,51 @@ export interface GameEvent {
 
 /** The complete state of a hackathon simulation run */
 export interface GameState {
-  /** Current phase of the game */
+  /** Current stage of the game */
+  stage: GameStage;
+  /** Current phase of the game (legacy, kept for compatibility) */
   phase: GamePhase;
+  /** Selected game difficulty */
+  difficulty: 'easy' | 'medium' | 'hard' | 'dev' | null;
   /** The problem the player chose to solve, or null if not yet selected */
   selectedProblem: Problem | null;
+  /** Solution direction chosen for the project */
+  solutionDirection: string | null;
   /** Technologies chosen for the project */
   techStack: TechItem[];
+  /** Unique Selling Proposition selected */
+  usp: string | null;
   /** Features selected and prioritized for building */
   features: Feature[];
-  /** Seconds remaining in the current timed phase */
+  /** Chosen mentor name */
+  mentorName: string | null;
+  /** Chosen business model */
+  businessModel: string | null;
+  /** Written elevator pitch text */
+  pitchText: string;
+  
+  /** Seconds remaining in the current timed phase (legacy) */
   timeRemaining: number;
-  /** Total seconds allocated for the current timed phase */
+  /** Total seconds allocated for the current timed phase (legacy) */
   totalTime: number;
+
+  /** Seconds remaining on the global game clock */
+  globalTimeRemaining: number;
+  /** Total seconds allocated for the game based on difficulty */
+  globalTotalTime: number;
+  /** Whether the global timer is currently paused */
+  isTimerPaused: boolean;
+
   /** Current score breakdown */
   score: ScoreBreakdown;
+  
   /** The judge currently evaluating, or null */
   currentJudge: Judge | null;
   /** Accumulated feedback from all judges */
   judgeFeedback: JudgeFeedback[];
+  /** Current state of the judge spin wheel */
+  judgeSpinState: 'idle' | 'spinning' | 'done';
+
   /** Number of mentor hints the player has consumed */
   mentorHintsUsed: number;
   /** Random events that have occurred this run */
@@ -188,20 +230,56 @@ export interface GameState {
 export interface GameActions {
   /** Begin a new hackathon run */
   startGame: () => void;
-  /** Advance to the next game phase */
+  /** Set chosen difficulty and initialize timer */
+  setDifficulty: (difficulty: 'easy' | 'medium' | 'hard' | 'dev') => void;
+  
+  /** Advance to the next game stage */
+  nextStage: () => void;
+  /** Advance to the next game phase (legacy) */
   nextPhase: () => void;
+  /** Retreat to the previous game stage */
+  previousStage: () => void;
+  /** Jump directly to a specific game stage */
+  jumpToStage: (stage: GameStage) => void;
+
   /** Choose a problem to solve */
   selectProblem: (problem: Problem) => void;
+  /** Choose a solution direction */
+  setSolutionDirection: (direction: string) => void;
   /** Add a technology to the tech stack */
   addTechItem: (item: TechItem) => void;
   /** Remove a technology from the tech stack by ID */
   removeTechItem: (itemId: string) => void;
+  /** Set unique selling proposition */
+  setUsp: (usp: string) => void;
   /** Reorder the feature priority list */
   reorderFeatures: (features: Feature[]) => void;
-  /** Decrement the timer by one second */
+  /** Choose a mentor */
+  setMentorName: (name: string) => void;
+  /** Choose a business model */
+  setBusinessModel: (model: string) => void;
+  /** Set elevator pitch text */
+  setPitchText: (text: string) => void;
+
+  /** Decrement the global timer by one second */
   tickTimer: () => void;
-  /** Manually set the remaining time */
+  /** Pause the global timer */
+  pauseTimer: () => void;
+  /** Resume the global timer */
+  resumeTimer: () => void;
+  /** Manually set the remaining global time */
   setTimeRemaining: (time: number) => void;
+
+  /** Update score categories */
+  updateScore: (category: keyof Omit<ScoreBreakdown, 'total'>, value: number) => void;
+  
+  /** Set evaluation state */
+  setCurrentJudge: (judge: Judge | null) => void;
+  /** Add feedback from a judge */
+  addJudgeFeedback: (feedback: JudgeFeedback) => void;
+  /** Set judge spin state */
+  setJudgeSpinState: (state: 'idle' | 'spinning' | 'done') => void;
+
   /** End the current game */
   endGame: () => void;
   /** Reset all state for a fresh run */
