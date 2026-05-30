@@ -42,6 +42,7 @@ import { CHAOS_EVENTS } from "@/data/chaosEvents";
 import { MODIFIERS } from "@/data/modifiers";
 import { generateJudgeFeedback } from "@/data/judgeComments";
 import { classifyProjectArchetype } from "@/lib/archetypes";
+import { generatePRD } from "@/lib/prdGenerator";
 import {
   playMutedClick,
   playSubtleHover,
@@ -2174,9 +2175,136 @@ function ResultsStage() {
     gameMode,
     difficulty,
     activeModifiers,
+    score,
   } = useGameStore();
 
   const [copied, setCopied] = useState(false);
+
+  // Startup PRD Generator States
+  const [isPrdModalOpen, setIsPrdModalOpen] = useState(false);
+  const [prdLoadingStep, setPrdLoadingStep] = useState(0);
+  const [compiledPrd, setCompiledPrd] = useState("");
+  const [prdCopied, setPrdCopied] = useState(false);
+
+  const prdLogs = [
+    "INITIALIZING_STARTUP_COMPILER_V1.0...",
+    "EXTRACTING_DECISIONS_MANIFEST...",
+    "COMPILING_ARCHETYPE_METRICS...",
+    "RESOLVING_TECH_COMPATIBILITY_LAYERS...",
+    "INTEGRATING_USP_VALUE_LOOPS...",
+    "SIMULATING_MONETIZATION_ECONOMICS...",
+    "ASSESSING_CHAOS_FALLBACK_RISKS...",
+    "GENERATING_VENTURE_PRD_MARKDOWN...",
+    "COMPILATION_SUCCESSFUL."
+  ];
+
+  useEffect(() => {
+    if (!isPrdModalOpen) return;
+
+    setPrdLoadingStep(0);
+    setCompiledPrd("");
+
+    let apiResponseMarkdown = "";
+    let ticksCompleted = false;
+
+    // Trigger the server-side fetch immediately in the background
+    fetch("/api/generate-prd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        judgeFeedback,
+        selectedProblem,
+        solutionDirection,
+        usp,
+        techStack,
+        features,
+        businessModel,
+        mentorHintsUsed,
+        currentJudge,
+        unlockedAchievements,
+        chaosHistory,
+        gameMode,
+        difficulty,
+        activeModifiers,
+        score,
+        grade,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        apiResponseMarkdown = data.markdown || "";
+        if (ticksCompleted) {
+          setCompiledPrd(apiResponseMarkdown);
+          setPrdLoadingStep(prdLogs.length - 1);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        const localPrd = generatePRD({
+          judgeFeedback,
+          selectedProblem,
+          solutionDirection,
+          usp,
+          techStack,
+          features,
+          businessModel,
+          mentorHintsUsed,
+          currentJudge,
+          unlockedAchievements,
+          chaosHistory,
+          gameMode,
+          difficulty,
+          activeModifiers,
+          score,
+        } as any);
+        apiResponseMarkdown = `> [!WARNING]\n> **AI_COMPILATION_ERROR // LOCAL FALLBACK ACTIVE:**\n> ${err.message || "Network offline"}\n\n${localPrd}`;
+        if (ticksCompleted) {
+          setCompiledPrd(apiResponseMarkdown);
+          setPrdLoadingStep(prdLogs.length - 1);
+        }
+      });
+
+    // Run the terminal animation tick sequence
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      currentStep++;
+      if (currentStep >= prdLogs.length - 2) {
+        clearInterval(interval);
+        ticksCompleted = true;
+        setPrdLoadingStep(prdLogs.length - 2);
+        // Complete when the API is done
+        if (apiResponseMarkdown !== "") {
+          setCompiledPrd(apiResponseMarkdown);
+          setPrdLoadingStep(prdLogs.length - 1);
+        }
+      } else {
+        setPrdLoadingStep(currentStep);
+      }
+    }, 350);
+
+    return () => clearInterval(interval);
+  }, [isPrdModalOpen]);
+
+  const handleCopyPrd = () => {
+    navigator.clipboard.writeText(compiledPrd).then(() => {
+      setPrdCopied(true);
+      playSnapSound();
+      setTimeout(() => setPrdCopied(false), 1500);
+    });
+  };
+
+  const handleDownloadPrd = () => {
+    const startupName = selectedProblem?.title.split(" ")[0] || "Nova";
+    const blob = new Blob([compiledPrd], { type: "text/markdown;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${startupName}_PRD.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    playSnapSound();
+  };
 
   const feedback = judgeFeedback[judgeFeedback.length - 1];
   const finalScore100 = feedback?.score || 0;
@@ -2191,6 +2319,25 @@ function ResultsStage() {
     return "F";
   };
   const grade = getGrade(finalScore100);
+
+  const renderFormattedText = (text: string) => {
+    if (!text) return "";
+    const parts = text.split("**");
+    return parts.map((part, i) => {
+      const isBold = i % 2 === 1;
+      if (part.includes("`")) {
+        const codeParts = part.split("`");
+        const mapped = codeParts.map((cp, j) => {
+          if (j % 2 === 1) {
+            return <code key={j} className="bg-neutral-200 border border-neutral-300 px-1 py-0.5 rounded text-neutral-800 font-mono text-[9px]">{cp}</code>;
+          }
+          return cp;
+        });
+        return isBold ? <strong key={i} className="font-bold text-neutral-900">{mapped}</strong> : <span key={i}>{mapped}</span>;
+      }
+      return isBold ? <strong key={i} className="font-bold text-neutral-900">{part}</strong> : <span key={i}>{part}</span>;
+    });
+  };
 
   const archetype = classifyProjectArchetype({
     techStack,
@@ -2588,6 +2735,54 @@ function ResultsStage() {
           </div>
         )}
 
+        {/* Startup PRD Generator Section */}
+        {(() => {
+          const isQualified = (grade === "S" || grade === "A" || grade === "B") && finalScore100 >= 72;
+          return (
+            <div className={`p-5 bg-white space-y-4 shadow-sm select-none relative overflow-hidden transition-all duration-300 ${
+              isQualified ? "border-2 border-double border-neutral-900" : "border border-dashed border-neutral-300 opacity-80"
+            }`}>
+              <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
+                <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">STARTUP_ACCELERATION_GATES</span>
+                <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
+                  isQualified ? "bg-emerald-600 text-white" : "bg-neutral-100 text-neutral-500"
+                }`}>
+                  {isQualified ? "VENTURE QUALIFIED" : "🔒 LOCKED"}
+                </span>
+              </div>
+
+              <div className="space-y-1 text-left">
+                <h3 className={`text-sm font-black uppercase flex items-center gap-1.5 ${isQualified ? "text-neutral-900" : "text-neutral-400"}`}>
+                  {isQualified ? "🚀 This Idea Has Potential" : "🔒 Startup PRD Generator"}
+                </h3>
+                <p className="text-[11px] text-neutral-600 font-sans font-light leading-relaxed">
+                  {isQualified 
+                    ? "The judges believe this project is worth exploring further. Generate a startup-grade Product Requirements Document based on your hackathon decisions."
+                    : "Get a grade B or above to unlock this startup product compiler."
+                  }
+                </p>
+              </div>
+
+              <Button
+                onClick={() => {
+                  if (!isQualified) return;
+                  playMutedClick();
+                  setIsPrdModalOpen(true);
+                }}
+                disabled={!isQualified}
+                onMouseEnter={isQualified ? playSubtleHover : undefined}
+                className={`w-full font-mono text-xs h-9 border focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none ${
+                  isQualified 
+                    ? "bg-neutral-900 text-white border-neutral-900 hover:bg-neutral-800 cursor-pointer" 
+                    : "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
+                }`}
+              >
+                {isQualified ? "GENERATE_STARTUP_PRD.EXE" : "GENERATE_STARTUP_PRD.EXE (LOCKED)"}
+              </Button>
+            </div>
+          );
+        })()}
+
         {/* Achievements Grid */}
         <div className="border-t border-dashed border-neutral-200 pt-4">
           <span className="text-neutral-400 block text-[9px] uppercase mb-3">GLOBAL_ACHIEVEMENTS_DECRYPTION:</span>
@@ -2664,6 +2859,169 @@ function ResultsStage() {
             🔄 REBOOT_SIMULATOR.EXE
           </Button>
         </div>
+
+        {/* Startup PRD Generator Overlay Modal */}
+        {isPrdModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-fade-in select-none">
+            <div className="w-full max-w-3xl bg-white border-2 border-neutral-900 rounded-lg shadow-[4px_4px_0px_rgba(0,0,0,1)] p-5 sm:p-6 flex flex-col gap-4 overflow-hidden relative">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs text-neutral-400">PRD_MANIFEST_COMPILER</span>
+                  <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                    prdLoadingStep === prdLogs.length - 1 ? "bg-emerald-600 text-white" : "bg-neutral-900 text-white animate-pulse"
+                  }`}>
+                    {prdLoadingStep === prdLogs.length - 1 ? "READY" : "COMPILING"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    playMutedClick();
+                    setIsPrdModalOpen(false);
+                  }}
+                  className="text-neutral-400 hover:text-neutral-900 font-mono text-xs font-bold cursor-pointer transition-colors focus:outline-none"
+                >
+                  [ESC_CLOSE]
+                </button>
+              </div>
+
+              {/* Title */}
+              <div className="text-left space-y-1">
+                <h2 className="text-xl font-black uppercase text-neutral-900">
+                  Startup PRD Compiler
+                </h2>
+                <p className="text-[10px] text-muted-foreground font-mono">
+                  Decisions ledger parsed into product requirements parameters.
+                </p>
+              </div>
+
+              {/* Main Area */}
+              <div className="flex-1 overflow-hidden min-h-[350px] flex flex-col">
+                {prdLoadingStep < prdLogs.length - 1 ? (
+                  /* Sequential Compilation Logs View */
+                  <div className="flex-1 flex flex-col justify-center gap-4">
+                    <div className="text-center font-mono text-xs text-neutral-500 uppercase tracking-widest animate-pulse mb-2">
+                      COMPILING_STARTUP_ARGUMENTS...
+                    </div>
+                    
+                    <div className="bg-neutral-950 p-4 rounded font-mono text-[10px] text-neutral-100 min-h-[180px] flex flex-col justify-between shadow-inner">
+                      <div className="space-y-1 text-left">
+                        {prdLogs.slice(0, prdLoadingStep + 1).map((log, i) => (
+                          <div key={i} className={log.includes("SUCCESSFUL") ? "text-emerald-400 font-bold" : "text-neutral-300"}>
+                            {i === prdLoadingStep ? (
+                              <span className="typewriter-cursor">
+                                {`> [SYS] ${log}`}
+                              </span>
+                            ) : (
+                              `> [SYS] ${log}`
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="w-full bg-neutral-800 h-1 rounded overflow-hidden mt-3">
+                        <div 
+                          className="bg-neutral-100 h-full transition-all duration-300" 
+                          style={{ width: `${(prdLoadingStep / (prdLogs.length - 1)) * 100}%` }} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* PRD Compiled Document View */
+                  <div className="flex-1 overflow-hidden flex flex-col gap-4">
+                    <div className="flex-1 border border-neutral-300 p-5 bg-stone-50 rounded text-left overflow-y-auto font-sans text-xs text-neutral-850 space-y-3.5 leading-relaxed select-text shadow-inner max-h-[45vh]">
+                      {compiledPrd.split("\n").map((line, idx) => {
+                        if (line.startsWith("# ")) {
+                          return <h1 key={idx} className="text-base font-black text-neutral-900 border-b-2 border-neutral-950 pb-1 mt-5 first:mt-0 font-mono tracking-tight uppercase">{line.replace("# ", "")}</h1>;
+                        }
+                        if (line.startsWith("## ")) {
+                          return <h2 key={idx} className="text-xs font-bold text-neutral-900 border-b border-dashed border-neutral-300 pb-0.5 mt-4 uppercase tracking-wider font-mono">{line.replace("## ", "")}</h2>;
+                        }
+                        if (line.startsWith("### ")) {
+                          return <h3 key={idx} className="text-xs font-bold text-neutral-850 mt-3.5 uppercase font-mono">{line.replace("### ", "")}</h3>;
+                        }
+                        if (line.startsWith("* **") || line.startsWith("- **")) {
+                          const prefix = line.startsWith("* **") ? "* **" : "- **";
+                          const clean = line.replace(prefix, "").split("**: ");
+                          return (
+                            <div key={idx} className="flex gap-2 pl-3">
+                              <span className="text-neutral-400 font-mono text-[9px] mt-0.5">•</span>
+                              <span>
+                                <strong className="text-neutral-900 font-mono text-[10px] uppercase font-bold">{clean[0]}</strong>
+                                {clean[1] ? ": " : ""}
+                                {clean[1] ? renderFormattedText(clean[1]) : ""}
+                              </span>
+                            </div>
+                          );
+                        }
+                        if (line.startsWith("* ") || line.startsWith("- ")) {
+                          const prefix = line.startsWith("* ") ? "* " : "- ";
+                          return (
+                            <div key={idx} className="flex gap-2 pl-3">
+                              <span className="text-neutral-400 font-mono text-[9px] mt-0.5">•</span>
+                              <span>{renderFormattedText(line.replace(prefix, ""))}</span>
+                            </div>
+                          );
+                        }
+                        if (line.startsWith("> [!")) {
+                          const isNote = line.includes("NOTE");
+                          return (
+                            <div key={idx} className={`p-3 border-l-2 rounded-r font-mono text-[9px] my-2 ${
+                              isNote ? "bg-neutral-50 border-neutral-900 text-neutral-800" : "bg-amber-50 border-amber-500 text-amber-900"
+                            }`}>
+                              <span className="font-bold uppercase block mb-1">
+                                {isNote ? "💡 NOTE_MANIFEST:" : "⚠️ WARNING_MANIFEST:"}
+                              </span>
+                              {renderFormattedText(compiledPrd.split("\n")[idx + 1]?.replace("> ", "") || "")}
+                            </div>
+                          );
+                        }
+                        if (line.startsWith("> ")) {
+                          if (compiledPrd.split("\n")[idx - 1]?.startsWith("> [!")) return null;
+                          return <blockquote key={idx} className="p-2 border-l-2 border-neutral-900 pl-3 italic text-neutral-600 bg-neutral-50/50 font-serif my-2">{renderFormattedText(line.replace("> ", ""))}</blockquote>;
+                        }
+                        if (line.trim() === "") return null;
+                        return <p key={idx} className="font-sans text-[11px] leading-relaxed text-neutral-700">{renderFormattedText(line)}</p>;
+                      })}
+                    </div>
+
+                    {/* Actions Grid */}
+                    <div className="grid grid-cols-3 gap-2 border-t border-neutral-200 pt-3">
+                      <Button
+                        onClick={handleCopyPrd}
+                        onMouseEnter={playSubtleHover}
+                        variant="outline"
+                        className="font-mono text-[10px] h-9 border border-neutral-900 cursor-pointer focus:outline-none"
+                      >
+                        {prdCopied ? "[COPIED_TO_CLIPBOARD.TXT]" : "COPY_MARKDOWN.TXT"}
+                      </Button>
+                      <Button
+                        onClick={handleDownloadPrd}
+                        onMouseEnter={playSubtleHover}
+                        variant="outline"
+                        className="font-mono text-[10px] h-9 border border-neutral-900 cursor-pointer focus:outline-none"
+                      >
+                        DOWNLOAD_PRD.MD
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          playMutedClick();
+                          setIsPrdModalOpen(false);
+                        }}
+                        onMouseEnter={playSubtleHover}
+                        className="font-mono text-[10px] h-9 bg-neutral-900 text-white hover:bg-neutral-800 border border-neutral-900 cursor-pointer focus:outline-none"
+                      >
+                        CLOSE_MANIFEST.EXE
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
 
       </div>
     </GameplayStageCard>

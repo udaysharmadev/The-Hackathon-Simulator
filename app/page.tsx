@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -15,6 +16,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/store/gameStore";
 import { playMutedClick, playSubtleHover } from "@/lib/sound";
+import { PROBLEMS } from "@/data/problems";
+import { JUDGES } from "@/data/judges";
+import { TECH_POOL } from "@/data/techItems";
 
 /** Stagger animation container variant */
 const containerVariants = {
@@ -43,10 +47,140 @@ export default function LandingPage() {
   const resetGame = useGameStore((s) => s.resetGame);
   const setGameMode = useGameStore((s) => s.setGameMode);
 
+  const [isLocal, setIsLocal] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsLocal(
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+      );
+    }
+  }, []);
+
   const handleLaunch = () => {
     playMutedClick();
     resetGame();
     setGameMode("classic");
+    router.push("/game");
+  };
+
+  const handleDebugSkip = () => {
+    playMutedClick();
+    
+    // Pick a random problem
+    const randomProblem = PROBLEMS[Math.floor(Math.random() * PROBLEMS.length)];
+    
+    // Choose Node.js and Next.js from tech pool, or mock them
+    const nextTech = TECH_POOL.find(t => t.id === 'tech-next') || {
+      id: 'tech-next',
+      name: 'Next.js',
+      icon: 'layers',
+      category: 'frontend',
+      difficulty: 2,
+      synergies: ['tech-vercel', 'tech-supabase', 'tech-openai'],
+    };
+    
+    const nodeTech = TECH_POOL.find(t => t.id === 'tech-node') || {
+      id: 'tech-node',
+      name: 'Node.js',
+      icon: 'server',
+      category: 'backend',
+      difficulty: 2,
+      synergies: ['tech-react', 'tech-mongodb', 'tech-docker'],
+    };
+
+    const vercelTech = TECH_POOL.find(t => t.id === 'tech-vercel') || {
+      id: 'tech-vercel',
+      name: 'Vercel',
+      icon: 'cloud',
+      category: 'devops',
+      difficulty: 1,
+      synergies: ['tech-next', 'tech-react'],
+    };
+
+    const postgresTech = TECH_POOL.find(t => t.id === 'tech-postgres') || {
+      id: 'tech-postgres',
+      name: 'PostgreSQL',
+      icon: 'database',
+      category: 'database',
+      difficulty: 3,
+      synergies: ['tech-fastapi', 'tech-supabase', 'tech-aws'],
+    };
+
+    const mockTechStack = [nextTech, nodeTech, vercelTech, postgresTech] as any[];
+
+    // Pick a judge
+    const mockJudge = JUDGES[0] || {
+      id: 'judge-tech',
+      name: 'Dr. Priya Kapoor',
+      avatar: '⚡',
+      title: 'CTO, NeuralScale Systems',
+      personality: 'technical',
+    };
+
+    // Features
+    const mockFeatures = [
+      {
+        id: 'feat-1',
+        name: 'Core Adaptation Engine',
+        description: 'Dynamically adapts user experience in real-time based on tracking parameters.',
+        effort: 'high',
+        impact: 'high',
+      },
+      {
+        id: 'feat-2',
+        name: 'Real-Time Telemetry Dashboard',
+        description: 'Sleek visual representation of the compiler pipeline outputs.',
+        effort: 'medium',
+        impact: 'high',
+      },
+      {
+        id: 'feat-3',
+        name: 'Offline-First Sandbox Cache',
+        description: 'Saves full workspace logic inside the client cache.',
+        effort: 'low',
+        impact: 'medium',
+      }
+    ] as any[];
+
+    // Update the Zustand store using setState
+    useGameStore.setState({
+      stage: 'results',
+      phase: 'RESULTS',
+      isGameStarted: true,
+      isGameOver: true,
+      isTimerPaused: true,
+      selectedProblem: randomProblem,
+      solutionDirection: `We built a web application powered by a Next.js frontend combined with a robust Node.js server to solve the core challenges of ${randomProblem.title}.`,
+      techStack: mockTechStack,
+      usp: 'Ultra-low latency real-time telemetry rendering with automated sandboxed isolation.',
+      features: mockFeatures,
+      mentorName: 'Dr. Priya Kapoor',
+      businessModel: 'SaaS monthly subscriptions with flexible tiered enterprise pricing.',
+      pitchText: `Our product solves the core problems of ${randomProblem.title} by using Next.js for high-fidelity interactive client routing, coupled with Node.js on the backend. This allows instantaneous response tracking and complete runtime isolation.`,
+      score: {
+        innovation: 23,
+        execution: 24,
+        design: 21,
+        pitch: 22,
+        bonus: 5,
+        total: 95
+      },
+      currentJudge: mockJudge as any,
+      judgeFeedback: [
+        {
+          judgeId: mockJudge.id,
+          score: 95,
+          comment: `Superb execution! The Next.js and Node.js synergy is beautifully justified here, and the architecture is remarkably clean and scalable.`,
+          highlight: 'Outstanding code quality, modern layout aesthetics, and clear monetization workflows.'
+        }
+      ],
+      chaosHistory: ['api-rate-limit-resolved', 'database-crash-survived'],
+      difficulty: 'easy',
+      gameMode: 'classic',
+      activeModifiers: []
+    });
+
     router.push("/game");
   };
 
@@ -148,6 +282,15 @@ export default function LandingPage() {
             INITIALIZE_SIMULATION.SH
             <ChevronRight className="w-4 h-4" />
           </Button>
+
+          {isLocal && (
+            <button
+              onClick={handleDebugSkip}
+              className="mt-3 w-full text-center font-mono text-[9px] text-amber-500 hover:text-amber-600 font-bold uppercase transition-colors cursor-pointer border border-dashed border-amber-300 py-1.5 rounded hover:bg-[#fffbeb] transition-all duration-150"
+            >
+              🛠️ SKIP_TO_RESULTS_DEMO.EXE (DEVELOPER ONLY)
+            </button>
+          )}
         </motion.div>
 
         {/* Feature Highlights Grid */}
