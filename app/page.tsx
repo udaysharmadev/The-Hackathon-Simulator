@@ -8,12 +8,11 @@ import {
   Zap,
   Clock,
   Trophy,
-  Rocket,
-  ChevronRight,
-  Code2,
-  Sparkles,
   Users,
   ArrowRight,
+  Code2,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,81 +22,48 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.3,
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
     },
   },
 };
 
 /** Fade-up animation for children */
 const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 16 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
   },
 };
 
-/** Feature card data */
-const features = [
-  {
-    icon: <Zap className="w-6 h-6" />,
-    title: "Real Problems",
-    description:
-      "Tackle authentic hackathon challenges spanning fintech, healthtech, edtech, and more.",
-    color: "text-neon-cyan",
-    glow: "glow-cyan",
-  },
-  {
-    icon: <Clock className="w-6 h-6" />,
-    title: "Time Pressure",
-    description:
-      "Feel the clock ticking as you make critical decisions on tech stack, features, and strategy.",
-    color: "text-neon-orange",
-    glow: "glow-blue",
-  },
-  {
-    icon: <Trophy className="w-6 h-6" />,
-    title: "Live Judging",
-    description:
-      "Face a panel of judges with unique personalities and scoring criteria. Impress them all.",
-    color: "text-neon-purple",
-    glow: "glow-purple",
-  },
-  {
-    icon: <Users className="w-6 h-6" />,
-    title: "Compete & Learn",
-    description:
-      "Sharpen your hackathon instincts. Learn to prioritize, ship fast, and pitch with impact.",
-    color: "text-neon-green",
-    glow: "glow-green",
-  },
-];
-
-/** Floating orb for background decoration */
-function FloatingOrb({
-  className,
-  delay = 0,
+/** Reusable Feature Card Component */
+function FeatureCard({
+  icon,
+  title,
+  description,
 }: {
-  className: string;
-  delay?: number;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
 }) {
   return (
     <motion.div
-      className={`absolute rounded-full blur-3xl opacity-20 pointer-events-none ${className}`}
-      animate={{
-        y: [0, -30, 0],
-        x: [0, 15, 0],
-        scale: [1, 1.1, 1],
-      }}
-      transition={{
-        duration: 8,
-        delay,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
-    />
+      variants={itemVariants}
+      whileHover={{ y: -2 }}
+      className="flex flex-col p-6 bg-card border border-border rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.01)] hover:border-neutral-400 transition-all duration-200"
+    >
+      <div className="mb-4 flex items-center justify-center w-10 h-10 rounded-md border border-neutral-200/60 bg-neutral-50 text-neutral-700">
+        {icon}
+      </div>
+      <h3 className="font-mono text-sm font-bold tracking-tight uppercase mb-1.5 text-foreground">
+        {title}
+      </h3>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {description}
+      </p>
+    </motion.div>
   );
 }
 
@@ -121,139 +87,131 @@ function TerminalText() {
         }
         return prev + 1;
       });
-    }, 400);
+    }, 300);
     return () => clearInterval(timer);
   }, [lines.length]);
 
   return (
-    <div className="glass-card p-4 font-mono text-sm max-w-md mx-auto mb-8">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
-        <div className="w-3 h-3 rounded-full bg-red-500/80" />
-        <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-        <div className="w-3 h-3 rounded-full bg-green-500/80" />
-        <span className="text-xs text-muted-foreground ml-2">
-          hackathon-sim — zsh
-        </span>
+    <div className="bg-card border border-border rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.02)] p-4 font-mono text-xs max-w-sm sm:max-w-md w-full mx-auto mb-10 text-left">
+      {/* Terminal Title Bar */}
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-border/60">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-neutral-300" />
+          <div className="w-2 h-2 rounded-full bg-neutral-300" />
+          <div className="w-2 h-2 rounded-full bg-neutral-300" />
+          <span className="text-[10px] text-muted-foreground ml-1.5">
+            ttyS001 — zsh
+          </span>
+        </div>
+        <div className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
       </div>
-      <AnimatePresence>
-        {lines.slice(0, visibleLines).map((line, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`${
-              i === lines.length - 1
-                ? "text-neon-green font-bold"
-                : "text-muted-foreground"
-            } ${i === visibleLines - 1 ? "typewriter-cursor" : ""}`}
-          >
-            {line}
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      
+      {/* Terminal Content */}
+      <div className="space-y-1.5 min-h-[90px]">
+        <AnimatePresence>
+          {lines.slice(0, visibleLines).map((line, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2 }}
+              className={`${
+                i === lines.length - 1
+                  ? "text-neutral-900 font-bold"
+                  : "text-muted-foreground"
+              } ${i === visibleLines - 1 ? "typewriter-cursor" : ""}`}
+            >
+              {line}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
 
 /**
- * Landing Page — The Hackathon Simulator
+ * Redesigned Landing Page — The Hackathon Simulator
  *
- * Premium, animated landing page with hero section, feature cards,
- * terminal animation, and CTA to start the game.
+ * Premium "Paper Terminal" editorial aesthetic.
+ * Minimalist layouts, tactile controls, and high-fidelity typography.
  */
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden">
-      {/* Background decorations */}
-      <FloatingOrb
-        className="w-96 h-96 bg-neon-blue top-20 -left-48"
-        delay={0}
-      />
-      <FloatingOrb
-        className="w-80 h-80 bg-neon-purple top-40 -right-40"
-        delay={2}
-      />
-      <FloatingOrb
-        className="w-72 h-72 bg-neon-cyan bottom-20 left-1/3"
-        delay={4}
-      />
-      <div className="absolute inset-0 grid-pattern pointer-events-none" />
-
-      {/* Nav */}
+    <div className="relative min-h-screen flex flex-col overflow-hidden bg-background text-foreground dot-pattern">
+      
+      {/* Navigation Header */}
       <motion.nav
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative z-10 flex items-center justify-between px-6 md:px-12 py-5"
+        transition={{ duration: 0.4 }}
+        className="relative z-10 flex items-center justify-between px-6 md:px-12 py-4 border-b border-border bg-card/45 backdrop-blur-sm"
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-neon-blue/10 border border-neon-blue/20">
-            <Terminal className="w-5 h-5 text-neon-blue" />
+          <div className="p-1.5 rounded bg-neutral-100 border border-neutral-200">
+            <Terminal className="w-4 h-4 text-neutral-800" />
           </div>
-          <span className="font-bold text-lg tracking-tight">
-            HACKATHON<span className="text-neon-blue">SIM</span>
+          <span className="font-mono text-xs font-bold tracking-widest uppercase">
+            HACK_SIM // <span className="text-neutral-400">STAGE_01</span>
           </span>
         </div>
+        
         <div className="flex items-center gap-4">
-          <span className="hidden sm:inline text-sm text-muted-foreground font-mono">
-            v1.0.0
+          <span className="hidden sm:inline text-[10px] text-muted-foreground font-mono tracking-wider">
+            BUILD_VER_1.0.0
           </span>
           <Link href="/game">
             <Button
               variant="outline"
               size="sm"
-              className="border-neon-blue/30 text-neon-blue hover:bg-neon-blue/10 hover:border-neon-blue/50 transition-all"
+              className="font-mono text-xs px-3.5 h-7.5"
             >
-              <Rocket className="w-4 h-4 mr-1" />
-              Launch
+              LAUNCH_GAME.EXE
             </Button>
           </Link>
         </div>
       </motion.nav>
 
-      {/* Hero */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-12">
+      {/* Main Hero Container */}
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 md:py-20 max-w-5xl mx-auto w-full">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="text-center max-w-4xl mx-auto"
+          className="text-center w-full"
         >
-          {/* Eyebrow badge */}
+          {/* Tagline / Eyebrow */}
           <motion.div variants={itemVariants} className="mb-6">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium bg-neon-blue/10 border border-neon-blue/20 text-neon-blue">
-              <Sparkles className="w-3 h-3" />
-              Gamified Hackathon Experience
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded bg-neutral-100 border border-neutral-200 text-[10px] font-mono font-medium text-neutral-700 tracking-wider">
+              <Sparkles className="w-3 h-3 text-neutral-600" />
+              GAMIFIED HACKATHON SIMULATOR v1.0
             </span>
           </motion.div>
 
-          {/* Title */}
+          {/* Headline */}
           <motion.h1
             variants={itemVariants}
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05] mb-6"
+            className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tighter leading-[0.95] mb-6 text-neutral-900 uppercase font-sans max-w-3xl mx-auto"
           >
-            <span className="block">Build.</span>
-            <span className="block text-neon-blue text-glow-blue">Ship.</span>
-            <span className="block">Survive.</span>
+            Build. <span className="text-neutral-400">Ship.</span> <br /> Survive.
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
             variants={itemVariants}
-            className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed"
+            className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto mb-10 leading-relaxed font-light"
           >
-            Experience the intensity of a real hackathon — from problem reveal
-            to final judging. Make strategic decisions, manage your time, and
-            build something extraordinary.
+            Experience the pressure of a real hackathon. Select your challenge, 
+            assemble your tech stack, manage technical debt under a 10-minute global 
+            clock, and face the live judges.
           </motion.p>
 
           {/* Terminal Animation */}
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="w-full flex justify-center">
             <TerminalText />
           </motion.div>
 
-          {/* CTA Buttons */}
+          {/* CTA & Actions */}
           <motion.div
             variants={itemVariants}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
@@ -261,62 +219,64 @@ export default function LandingPage() {
             <Link href="/game">
               <Button
                 size="lg"
-                className="relative group bg-neon-blue hover:bg-neon-blue/90 text-white font-semibold px-8 py-6 text-lg rounded-xl glow-blue transition-all duration-300 hover:scale-105"
+                className="group font-mono text-sm px-6 h-11 border border-neutral-900"
               >
-                <Code2 className="w-5 h-5 mr-2" />
-                Start Hacking
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                <Code2 className="w-4 h-4 mr-2" />
+                START_HACKING.SH
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
               </Button>
             </Link>
-            <span className="text-sm text-muted-foreground flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              ~10 min experience
+            
+            <span className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              [~10 MIN EXPERIENCE]
             </span>
           </motion.div>
         </motion.div>
 
-        {/* Feature Cards */}
+        {/* Feature Cards Grid */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto mt-20 w-full"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-16 md:mt-24"
         >
-          {features.map((feature) => (
-            <motion.div
-              key={feature.title}
-              variants={itemVariants}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className={`glass-card p-6 group cursor-default hover:${feature.glow} transition-all duration-300`}
-            >
-              <div
-                className={`${feature.color} mb-4 p-3 rounded-lg bg-white/5 inline-block group-hover:scale-110 transition-transform duration-300`}
-              >
-                {feature.icon}
-              </div>
-              <h3 className="font-semibold text-base mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {feature.description}
-              </p>
-            </motion.div>
-          ))}
+          <FeatureCard
+            icon={<Zap className="w-5 h-5" />}
+            title="Real Problems"
+            description="Tackle authentic startup challenges spanning fintech, healthtech, and edtech."
+          />
+          <FeatureCard
+            icon={<Clock className="w-5 h-5" />}
+            title="Time Pressure"
+            description="Feel the global countdown as you prioritize feature pipelines under tight constraints."
+          />
+          <FeatureCard
+            icon={<Trophy className="w-5 h-5" />}
+            title="Live Judging"
+            description="Face an opinionated panel of four judges with custom personalities and weights."
+          />
+          <FeatureCard
+            icon={<Users className="w-5 h-5" />}
+            title="Compete & Learn"
+            description="Perfect your pacing, manage developer burnout, and pitch with technical clarity."
+          />
         </motion.div>
       </main>
 
-      {/* Footer */}
+      {/* Editorial Footer */}
       <motion.footer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.6 }}
-        className="relative z-10 text-center py-6 text-sm text-muted-foreground border-t border-white/5"
+        transition={{ delay: 0.8, duration: 0.4 }}
+        className="relative z-10 text-center py-6 text-[10px] text-muted-foreground border-t border-border bg-card/30 font-mono tracking-wider"
       >
-        <div className="flex items-center justify-center gap-2">
-          <Terminal className="w-4 h-4" />
+        <div className="flex items-center justify-center gap-1.5">
+          <Terminal className="w-3.5 h-3.5" />
           <span>
-            The Hackathon Simulator — Built with{" "}
-            <ChevronRight className="inline w-3 h-3" /> Next.js, Tailwind &
-            Framer Motion
+            THE HACKATHON SIMULATOR // BUILT ON NEXT.JS & TAILWIND v4
           </span>
+          <ChevronRight className="w-3 h-3 text-neutral-400" />
         </div>
       </motion.footer>
     </div>
