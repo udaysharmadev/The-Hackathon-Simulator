@@ -24,7 +24,7 @@ export const ARCHITECTURE_TEMPLATES: Record<string, ArchitectureTemplate> = {
         id: 'frontend',
         label: 'Frontend Layout',
         priority: 'required',
-        description: 'Compiles the client-side DOM layout and interface hierarchy.',
+        description: 'Builds the client-side UI layout and interface hierarchy.',
         emptyGuidance: '[DROP_FRONTEND_UI_FRAMEWORK_HERE]',
         compatibleCategories: ['Frontend', 'Design / UI', 'AR / VR', 'Mobile']
       },
@@ -64,7 +64,7 @@ export const ARCHITECTURE_TEMPLATES: Record<string, ArchitectureTemplate> = {
         id: 'hosting',
         label: 'Hosting & Deployment',
         priority: 'required',
-        description: 'Deploys compiled client-side static assets or server runtimes to cloud runtimes.',
+        description: 'Deploys client-side static assets or server runtimes to cloud runtimes.',
         emptyGuidance: '[DROP_INFRA_HOSTING_HERE]',
         compatibleCategories: ['Hosting / Infra', 'DevOps']
       },
@@ -102,8 +102,8 @@ export const ARCHITECTURE_TEMPLATES: Record<string, ArchitectureTemplate> = {
         id: 'mobile-framework',
         label: 'Mobile Framework',
         priority: 'required',
-        description: 'Drives the native cross-platform layout runtime or compiler engine.',
-        emptyGuidance: '[DROP_MOBILE_UI_COMPILER_HERE]',
+        description: 'Drives the native cross-platform layout runtime or application engine.',
+        emptyGuidance: '[DROP_MOBILE_UI_BUILDER_HERE]',
         compatibleCategories: ['Mobile', 'Frontend']
       },
       {
@@ -290,8 +290,8 @@ export const ARCHITECTURE_TEMPLATES: Record<string, ArchitectureTemplate> = {
         id: 'firmware-runtime',
         label: 'Firmware Runtime',
         priority: 'required',
-        description: 'Compiles the embedded low-level code running on the microcontroller.',
-        emptyGuidance: '[DROP_FIRMWARE_COMPILER_HERE]',
+        description: 'Builds the embedded low-level code running on the microcontroller.',
+        emptyGuidance: '[DROP_FIRMWARE_BUILDER_HERE]',
         compatibleCategories: ['IoT / Hardware', 'Backend']
       },
       {
@@ -352,7 +352,7 @@ export const ARCHITECTURE_TEMPLATES: Record<string, ArchitectureTemplate> = {
         id: 'frontend',
         label: 'Buyer Frontend',
         priority: 'required',
-        description: 'Compiles the product grid, listing search, and checkout interface.',
+        description: 'Builds the product grid, listing search, and checkout interface.',
         emptyGuidance: '[DROP_FRONTEND_UI_HERE]',
         compatibleCategories: ['Frontend', 'Design / UI']
       },

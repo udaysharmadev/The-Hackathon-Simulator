@@ -14,7 +14,7 @@ import { TECH_POOL, TECH_WEIGHTS } from "@/data/techItems";
 import { TECH_REGISTRY, getSlotForCategory, toStoreId, toRegistryId, TechRegistryItem } from "@/data/techRegistry";
 import { getRecommendations } from "@/lib/recommendations";
 import { ARCHITECTURE_TEMPLATES } from "@/data/architectureTemplates";
-import { generateUSPOptions, generateFeatureBacklog } from "@/lib/projectStrategyGenerator";
+import { generateUSPOptions, generateFeatureBacklog, generateBusinessModels, generateAdvisorAdvice, generateCustomElevatorPitch } from "@/lib/projectStrategyGenerator";
 import { getDailySeed } from "@/lib/dailyChallenge";
 import { DraggableCard } from "@/components/drag-drop/DraggableCard";
 import { DropZone } from "@/components/drag-drop/DropZone";
@@ -98,8 +98,24 @@ function GameplayStageCard({
         {/* Stage metadata tags */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/85">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] text-muted-foreground tracking-wider">
-              STAGE_{String(currentIndex + 1).padStart(2, "0")}//{stageKey.toUpperCase()}
+            <span className="font-mono text-[10px] text-muted-foreground tracking-wider uppercase">
+              {stageKey === 'difficulty' ? 'GETTING STARTED' : 
+               stageKey === 'results' ? 'HACKATHON CONCLUDED' : 
+               `ROUND ${currentIndex} of 11`
+              } // {
+                stageKey === 'difficulty' ? 'CHOOSE PACING' : 
+                stageKey === 'problemReveal' ? 'CHOOSE TRACK' : 
+                stageKey === 'solutionDirection' ? 'SOLUTION FORMAT' : 
+                stageKey === 'techStack' ? 'TECH STACK' : 
+                stageKey === 'usp' ? 'UNIQUE ADVANTAGE' : 
+                stageKey === 'features' ? 'FEATURE PRIORITIZATION' : 
+                stageKey === 'pitchDeck' ? 'PITCH STORYBOARD' : 
+                stageKey === 'mentor' ? 'MENTOR REVIEW' : 
+                stageKey === 'businessModel' ? 'BUSINESS MODEL' : 
+                stageKey === 'pitchPrep' ? 'PITCH SCRIPT' : 
+                stageKey === 'judgeSpin' ? 'JURY DRAW' : 
+                stageKey === 'judging' ? 'PITCH STAGE' : 'FINAL RESULTS'
+              }
             </span>
             {gameMode && (
               <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-900 text-white uppercase font-bold">
@@ -110,7 +126,7 @@ function GameplayStageCard({
           <div className="flex items-center gap-3">
             {difficulty && (
               <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-neutral-100 border border-neutral-200 text-neutral-600 uppercase font-bold">
-                DIFF: {difficulty}
+                PACE: {difficulty}
               </span>
             )}
             {difficulty && (
@@ -125,7 +141,7 @@ function GameplayStageCard({
         {/* Modifiers List Indicators */}
         {activeModifiers && activeModifiers.length > 0 && (
           <div className="flex flex-wrap gap-1.5 justify-start mb-6 text-left border-b border-dashed border-border/60 pb-3 select-none">
-            <span className="font-mono text-[9px] uppercase text-neutral-400 mr-2 self-center">ACTIVE_MODIFIERS:</span>
+            <span className="font-mono text-[9px] uppercase text-neutral-400 mr-2 self-center">HACKATHON RULE MODIFIERS:</span>
             {activeModifiers.map((modId) => {
               const mod = MODIFIERS.find((m) => m.id === modId);
               return (
@@ -183,7 +199,7 @@ function GameplayStageCard({
                 onMouseEnter={playSubtleHover}
                 className="font-mono text-xs h-8 bg-red-50/50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 hover:border-red-600 transition-all duration-150 cursor-pointer"
               >
-                ABORT_SIM
+                GIVE UP
               </Button>
             )}
           </div>
@@ -213,7 +229,7 @@ function GameplayStageCard({
             disabled={currentIndex === STAGE_ORDER.length - 1 || !difficulty || disableNext}
             className="font-mono text-xs h-8 border border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none cursor-pointer"
           >
-            CONTINUE &gt;
+            NEXT ROUND &gt;
           </Button>
         </div>
       </div>
@@ -229,10 +245,10 @@ function GameplayStageCard({
               className="w-full max-w-sm bg-card border border-neutral-300 rounded-lg shadow-2xl p-6 m-4 font-mono text-xs text-left"
             >
               <h3 className="text-sm font-black uppercase text-red-600 mb-2 flex items-center gap-1.5">
-                🚨 WARNING: ABORT_SIMULATION.EXE
+                🚨 LEAVE HACKATHON
               </h3>
               <p className="text-neutral-600 mb-6 font-sans font-light leading-relaxed">
-                Are you sure you want to abort the current simulation? All compile progress, feature pipelines, and current scores will be permanently deleted.
+                Are you sure you want to give up on this hackathon? You will lose all your progress, build decisions, and scores in this run.
               </p>
               
               <div className="flex items-center justify-end gap-2">
@@ -245,7 +261,7 @@ function GameplayStageCard({
                   }}
                   className="font-mono text-[10px] h-8 cursor-pointer"
                 >
-                  CANCEL
+                  KEEP BUILDING
                 </Button>
                 <Button
                   variant="destructive"
@@ -258,7 +274,7 @@ function GameplayStageCard({
                   }}
                   className="font-mono text-[10px] h-8 bg-red-600 hover:bg-red-700 text-white cursor-pointer"
                 >
-                  YES, ABORT
+                  YES, GIVE UP
                 </Button>
               </div>
             </motion.div>
@@ -275,17 +291,17 @@ function DifficultyStage() {
   const { setDifficulty, difficulty, gameMode } = useGameStore();
 
   const options = [
-    { key: "easy", name: "EASY_COMPILE.EXE", desc: gameMode === 'speedrun' ? "3 min speedrun budget // 1.0x baseline modifier" : "10 min compile budget // 1.0x baseline modifier" },
-    { key: "medium", name: "MEDIUM_COMPILE.EXE", desc: gameMode === 'speedrun' ? "3 min speedrun budget // 1.15x efficiency multiplier" : "7 min compile budget // 1.15x efficiency multiplier" },
-    { key: "hard", name: "HARD_COMPILE.EXE", desc: gameMode === 'speedrun' ? "3 min speedrun budget // 1.30x structural speed multiplier" : "5 min compile budget // 1.30x structural speed multiplier" },
-    { key: "dev", name: "DEV_DEBUG.SH", desc: gameMode === 'speedrun' ? "3 min speedrun budget // 1.00x test build modifier" : "60 seconds compile budget // 1.00x test build modifier" },
+    { key: "easy", name: "RELAXED BUILD (EASY)", desc: gameMode === 'speedrun' ? "3-minute countdown // 1.0x score multiplier" : "10-minute countdown // 1.0x score multiplier. Perfect for planning and exploring." },
+    { key: "medium", name: "STANDARD HACK (MEDIUM)", desc: gameMode === 'speedrun' ? "3-minute countdown // 1.15x score multiplier" : "7-minute countdown // 1.15x score multiplier. The classic high-pressure hackathon pace." },
+    { key: "hard", name: "CRUNCH TIME (HARD)", desc: gameMode === 'speedrun' ? "3-minute countdown // 1.30x score multiplier" : "5-minute countdown // 1.30x score multiplier. Quick decisions and maximum intensity." },
+    { key: "dev", name: "SPEED BUILD (DEV)", desc: gameMode === 'speedrun' ? "3-minute countdown // 1.00x score multiplier" : "60-second countdown // 1.00x score multiplier. Developer test run pace." },
   ] as const;
 
   return (
     <GameplayStageCard
       stageKey="difficulty"
-      title="Select Difficulty"
-      subtitle="Select a difficulty profile. Dynamic schedules governs available seconds, event complexities, and aggregate compile speeds."
+      title="Choose Your Pace"
+      subtitle="Decide how much time you want to budget for this hackathon. A shorter clock gives you less time to make decisions, but it increases your final score multiplier."
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto text-left">
         {options.map((opt) => (
@@ -346,13 +362,13 @@ function ProblemRevealStage() {
   return (
     <GameplayStageCard
       stageKey="problemReveal"
-      title="Problem Reveal"
-      subtitle="Review the assigned startup challenge statement. Shuffling is available to redraw alternative requirements grids. The timer will start after problem statement selection."
+      title="Round 1: Choose a Challenge"
+      subtitle="Every great hackathon project starts with a real-world problem. Shuffle the challenge statement until you find one that inspires you. The timer starts when you accept."
     >
       <div className="space-y-4 text-left max-w-md mx-auto font-mono text-[11px] leading-relaxed">
         {/* Notice of timer start */}
         <div className="p-3 rounded border border-neutral-900 bg-neutral-50/50 text-center font-mono text-[10px] text-neutral-800 tracking-wide select-none uppercase font-bold">
-          ⏱️ STATUS: COMPILER_STANDBY // THE TIMER WILL START AFTER PROBLEM STATEMENT SELECTION.
+          ⏱️ STATUS: READY // THE TIMER WILL START AS SOON AS YOU ACCEPT A CHALLENGE.
         </div>
 
         <div className="flex justify-end">
@@ -368,7 +384,7 @@ function ProblemRevealStage() {
             className="text-[10px] h-7 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none"
           >
             <RotateCcw className={`w-3.5 h-3.5 mr-1 ${shuffling ? 'animate-spin' : ''}`} />
-            SHUFFLE_STATEMENT.EXE
+            DRAW ANOTHER CHALLENGE
           </Button>
         </div>
 
@@ -383,11 +399,11 @@ function ProblemRevealStage() {
               className="p-5 rounded-md border border-neutral-200 bg-neutral-50/50 space-y-4"
             >
               <div>
-                <span className="text-neutral-400">PROBLEM_NAME:</span>{" "}
+                <span className="text-neutral-400">CHALLENGE:</span>{" "}
                 <span className="font-bold text-neutral-900 uppercase">{selectedProblem.title}</span>
               </div>
               <div>
-                <span className="text-neutral-400">CATEGORY:</span>{" "}
+                <span className="text-neutral-400">TRACK:</span>{" "}
                 <span className="font-bold text-neutral-800 uppercase px-1.5 py-0.5 rounded bg-neutral-100 border border-neutral-200 text-[10px]">
                   {selectedProblem.category}
                 </span>
@@ -397,7 +413,7 @@ function ProblemRevealStage() {
               </p>
               
               <div className="border-t border-dashed border-border pt-3 space-y-1">
-                <span className="text-neutral-400 font-bold block text-[10px]">COMPILE_CONSTRAINTS:</span>
+                <span className="text-neutral-400 font-bold block text-[10px]">TRACK RULES:</span>
                 <ul className="list-disc list-inside text-neutral-700 text-[10px] space-y-1 font-sans font-light">
                   {selectedProblem.constraints.map((c, i) => (
                     <li key={i}>{c}</li>
@@ -407,7 +423,7 @@ function ProblemRevealStage() {
 
               {selectedProblem.judgingHint && (
                 <div className="border-t border-dashed border-border pt-3">
-                  <span className="text-neutral-400 font-bold block text-[10px] mb-1">JUDGING_CLUE:</span>
+                  <span className="text-neutral-400 font-bold block text-[10px] mb-1">JUDGES' TIP:</span>
                   <div className="p-2.5 rounded bg-amber-50/30 border border-amber-200/50 text-[10px] text-amber-800 font-sans font-light leading-relaxed">
                     💡 {selectedProblem.judgingHint}
                   </div>
@@ -427,12 +443,12 @@ function SolutionDirectionStage() {
   const { solutionDirection, setSolutionDirection, updateScore } = useGameStore();
 
   const options = [
-    { id: "web-app", name: "Web Application", desc: "Compile lightweight modular sites (+Design, +Feasibility)" },
-    { id: "mobile-app", name: "Mobile Application", desc: "Build native offline study tools (+Design, +Execution)" },
-    { id: "ai-solution", name: "AI Solution", desc: "Assemble localized cognitive pipelines (+Innovation, +PitchPotential)" },
-    { id: "iot-product", name: "IoT Hardware Product", desc: "Program micro-controllers & sensors (+Innovation, -Execution)" },
-    { id: "platform", name: "Service Platform", desc: "Design shared micro-services lattices (+Execution, +Innovation)" },
-    { id: "marketplace", name: "Trading Marketplace", desc: "Build automated peer exchange pools (+PitchPotential, +Feasibility)" },
+    { id: "web-app", name: "Web Application", desc: "Build responsive web apps. High marks for design and feasibility." },
+    { id: "mobile-app", name: "Mobile Application", desc: "Create native mobile apps. Emphasizes design and device execution." },
+    { id: "ai-solution", name: "AI Solution", desc: "Assemble smart cognitive pipelines. Exceptional innovation and pitch potential." },
+    { id: "iot-product", name: "IoT Hardware Product", desc: "Program micro-controllers & sensors. Extreme innovation, harder to execute." },
+    { id: "platform", name: "Service Platform", desc: "Design shared microservice layers. High scores for execution and architecture." },
+    { id: "marketplace", name: "Trading Marketplace", desc: "Build automated peer exchanges. Outstanding pitch potential and feasibility." },
   ];
 
   const handleSelect = (id: string) => {
@@ -481,8 +497,8 @@ function SolutionDirectionStage() {
   return (
     <GameplayStageCard
       stageKey="solutionDirection"
-      title="Solution Direction"
-      subtitle="Establish the primary architecture layout. Option profile choices inject specific baseline score offsets to hidden multipliers."
+      title="Round 2: Define Your Solution"
+      subtitle="Choose the format of your solution. Your format shapes your baseline stack slots and influences how judges evaluate your execution and design."
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto text-left font-mono text-[11px]">
         {options.map((opt) => (
@@ -795,22 +811,22 @@ function TechStackStage() {
 
   // Tabs for Visual categorization
   const tabs = [
-    { id: 'all', label: 'ALL_TECH.EXE' },
-    { id: 'frontend', label: 'FRONTEND.SYS' },
-    { id: 'backend', label: 'BACKEND.SYS' },
-    { id: 'database', label: 'DATABASE.SYS' },
-    { id: 'devops', label: 'INFRA_DEVOPS.SYS' },
-    { id: 'ai', label: 'AI_COPROCESSOR.SYS' },
-    { id: 'hardware', label: 'IoT_HARDWARE.SYS' },
-    { id: 'apis', label: 'APIs_SERVICES.SYS' },
+    { id: 'all', label: 'ALL TECH' },
+    { id: 'frontend', label: 'FRONTEND' },
+    { id: 'backend', label: 'BACKEND' },
+    { id: 'database', label: 'DATABASE' },
+    { id: 'devops', label: 'INFRASTRUCTURE' },
+    { id: 'ai', label: 'AI & DATA' },
+    { id: 'hardware', label: 'HARDWARE' },
+    { id: 'apis', label: 'SERVICES & APIs' },
   ];
 
   // Quick Filters
   const quickFilters = [
-    { id: 'all', label: 'COMPATIBLE_ONLY' },
-    { id: 'all-bypass', label: 'SHOW_ALL_LIBRARY' },
+    { id: 'all', label: 'SUITABLE FOR SLOT' },
+    { id: 'all-bypass', label: 'SHOW ALL TECH' },
     { id: 'recommended', label: '★ RECOMMENDED' },
-    { id: 'synergic', label: '⚡ SYNERGIC_BOOST' },
+    { id: 'synergic', label: '⚡ STACK SYNERGIES' },
   ];
 
   // Filter tech items based on Active Tab, Search Query, Quick Filters, and Selected Slot Compatibilities
@@ -861,8 +877,8 @@ function TechStackStage() {
     <DndContext collisionDetection={closestCenter} sensors={sensors} onDragEnd={handleDragEnd}>
       <GameplayStageCard
         stageKey="techStack"
-        title="Assemble Tech Stack"
-        subtitle={`Configure the dynamic ${activeTemplate.solutionName} architecture. Select slots on the right to filter recommended tech, or drag chips into zones.`}
+        title="Round 3: Choose Your Tech Stack"
+        subtitle={`Build your architecture from the available library. Select slot cards on the right to see matching technologies, or drag cards directly into slots.`}
       >
         <div className="space-y-4 max-w-4xl mx-auto text-left font-mono text-[11px]">
           
@@ -871,7 +887,7 @@ function TechStackStage() {
             <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-md space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-neutral-900 font-bold text-[9px] uppercase tracking-widest flex items-center gap-1">
-                  ★ RECOMMENDED_ARCHITECTURAL_PRESET:
+                  ★ ORGANIZER RECOMMENDATION:
                 </span>
                 <span className="text-[8px] bg-neutral-900 text-white px-1.5 py-0.5 rounded font-mono">
                   USP: {usp?.toUpperCase() || "N/A"}
@@ -881,7 +897,7 @@ function TechStackStage() {
                 "{recommendedStack.why}"
               </p>
               <div className="flex flex-wrap gap-1.5 pt-1">
-                <span className="text-neutral-400 text-[8px] uppercase self-center font-mono">SUGGESTED:</span>
+                <span className="text-neutral-400 text-[8px] uppercase self-center font-mono">SUGGESTED TECH:</span>
                 {recommendedStack.techIds.map((techId) => {
                   const regItem = TECH_REGISTRY.find((item) => item.id === techId);
                   if (!regItem) return null;
@@ -937,7 +953,7 @@ function TechStackStage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="SEARCH_TECH_LIBRARY..."
+                placeholder="SEARCH TECHNOLOGIES..."
                 className="w-full px-2.5 py-1.5 bg-white border border-neutral-200 rounded text-[10px] font-mono uppercase tracking-wider focus:outline-none focus:border-neutral-900 transition-colors"
               />
             </div>
@@ -967,72 +983,72 @@ function TechStackStage() {
           {/* Main Drag-Drop Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             
-            {/* Available Tech (Left Panel) */}
-            <div className="lg:col-span-3 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
-                  LIBRARY: {activeSlotMeta ? `${activeSlotMeta.label.toUpperCase()} COMPATIBLE` : 'ALL'} ({filteredTechRegistry.length} ITEMS):
+          {/* Available Tech (Left Panel) */}
+          <div className="lg:col-span-3 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
+                AVAILABLE TECHNOLOGIES: {activeSlotMeta ? `${activeSlotMeta.label.toUpperCase()} COMPATIBLE` : 'ALL'} ({filteredTechRegistry.length} ITEMS):
+              </span>
+              {activeSlotMeta && activeFilter !== 'all-bypass' && (
+                <span className="text-[8px] text-neutral-500 font-normal">
+                  [FILTER ACTIVE: CLICK SLOTS TO CHANGE TARGET]
                 </span>
-                {activeSlotMeta && activeFilter !== 'all-bypass' && (
-                  <span className="text-[8px] text-neutral-500 font-normal">
-                    [FILTER_ACTIVE: CLICK SLOTS TO CHANGE TARGET]
-                  </span>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[380px] overflow-y-auto pr-1">
-                {filteredTechRegistry.map((tech) => {
-                  const storeId = toStoreId(tech.id);
-                  const isSelected = selectedIds.has(storeId);
-                  const isRecommended = recommendedStack?.techIds.includes(tech.id);
-                  const hasSynergy = isSynergic(tech);
-
-                  return (
-                    <DraggableCard key={tech.id} id={tech.id} data={{ ...tech }}>
-                      <button
-                        onClick={() => {
-                          playMutedClick();
-                          handleToggleTech(tech);
-                        }}
-                        onMouseEnter={playSubtleHover}
-                        className={`w-full text-left flex flex-col p-2.5 rounded-md border transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none ${
-                          isSelected
-                            ? "border-neutral-900 bg-neutral-50 shadow-sm font-bold animate-[pulse_3s_infinite]"
-                            : "border-neutral-200 hover:border-neutral-300 bg-white"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between w-full gap-1">
-                          <span className="font-bold text-neutral-900 block truncate">{tech.name}</span>
-                          {isRecommended && (
-                            <span className="text-[8px] bg-neutral-900 text-white px-1 rounded font-bold uppercase shrink-0">
-                              ★ REC
-                            </span>
-                          )}
-                          {!isRecommended && hasSynergy && (
-                            <span className="text-[8px] bg-neutral-100 text-neutral-900 border border-neutral-300 px-1 rounded font-bold uppercase shrink-0">
-                              ⚡ SYNERGY
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[8px] text-muted-foreground uppercase mt-0.5 tracking-wider font-light truncate">
-                          {tech.category} • DIF: {tech.difficultyScore}
-                        </span>
-                      </button>
-                    </DraggableCard>
-                  );
-                })}
-                {filteredTechRegistry.length === 0 && (
-                  <div className="col-span-full py-8 text-center text-neutral-400 italic text-[10px]">
-                    [NO_COMPATIBLE_TECHNOLOGY_FOUND]
-                  </div>
-                )}
-              </div>
+              )}
             </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[380px] overflow-y-auto pr-1">
+              {filteredTechRegistry.map((tech) => {
+                const storeId = toStoreId(tech.id);
+                const isSelected = selectedIds.has(storeId);
+                const isRecommended = recommendedStack?.techIds.includes(tech.id);
+                const hasSynergy = isSynergic(tech);
+
+                return (
+                  <DraggableCard key={tech.id} id={tech.id} data={{ ...tech }}>
+                    <button
+                      onClick={() => {
+                        playMutedClick();
+                        handleToggleTech(tech);
+                      }}
+                      onMouseEnter={playSubtleHover}
+                      className={`w-full text-left flex flex-col p-2.5 rounded-md border transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none ${
+                        isSelected
+                          ? "border-neutral-900 bg-neutral-50 shadow-sm font-bold animate-[pulse_3s_infinite]"
+                          : "border-neutral-200 hover:border-neutral-300 bg-white"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full gap-1">
+                        <span className="font-bold text-neutral-900 block truncate">{tech.name}</span>
+                        {isRecommended && (
+                          <span className="text-[8px] bg-neutral-900 text-white px-1 rounded font-bold uppercase shrink-0">
+                            ★ REC
+                          </span>
+                        )}
+                        {!isRecommended && hasSynergy && (
+                          <span className="text-[8px] bg-neutral-100 text-neutral-900 border border-neutral-300 px-1 rounded font-bold uppercase shrink-0">
+                            ⚡ SYNERGY
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[8px] text-muted-foreground uppercase mt-0.5 tracking-wider font-light truncate">
+                        {tech.category} • DIF: {tech.difficultyScore}
+                      </span>
+                    </button>
+                  </DraggableCard>
+                );
+              })}
+              {filteredTechRegistry.length === 0 && (
+                <div className="col-span-full py-8 text-center text-neutral-400 italic text-[10px]">
+                  [NO MATCHING TECHNOLOGIES FOUND]
+                </div>
+              )}
+            </div>
+          </div>
 
             {/* Dynamic Architecture Slots (Right Panel) */}
             <div className="lg:col-span-2 space-y-3">
               <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
-                {activeTemplate.solutionName.toUpperCase()}_SLOTS (DRAG_HERE):
+                YOUR PROJECT ARCHITECTURE (DRAG HERE):
               </span>
 
               <div className="space-y-2 max-h-[290px] overflow-y-auto pr-1">
@@ -1118,13 +1134,13 @@ function TechStackStage() {
                                 {getPriorityBadge(slot.priority)}
                               </div>
                               <div className="flex items-center gap-1.5 mt-1 text-[7.5px] text-neutral-400 tracking-wide font-light uppercase">
-                                <span>● ACTIVE</span>
+                                <span>Active</span>
                                 <span className="text-neutral-700">|</span>
-                                <span>{slot.label} CONNECTED</span>
+                                <span>Connected to {slot.label}</span>
                               </div>
                               {warningMessage && (
                                 <span className="text-amber-500 font-bold block mt-1 text-[7.5px] tracking-wide animate-pulse">
-                                  ⚠ MISMATCH: {warningMessage.toUpperCase()}
+                                  ⚠ UNUSUAL FIT: {warningMessage.toUpperCase()}
                                 </span>
                               )}
                             </div>
@@ -1138,7 +1154,7 @@ function TechStackStage() {
                               onMouseEnter={playSubtleHover}
                               className="px-2 py-0.5 font-mono text-[8px] bg-neutral-800 border border-neutral-700 hover:border-red-900 hover:text-red-400 rounded transition-all duration-200 shrink-0 ml-2 text-neutral-300 cursor-pointer uppercase font-bold"
                             >
-                              EJECT
+                              REMOVE
                             </button>
                           </motion.div>
                         ) : (
@@ -1157,16 +1173,16 @@ function TechStackStage() {
               {activeSlotMeta && (
                 <div className="p-2.5 bg-neutral-50 border border-neutral-200 rounded-md space-y-1 font-sans text-[10px]">
                   <div className="flex items-center justify-between font-mono font-bold text-[9px] uppercase tracking-wider text-neutral-800">
-                    <span>⚙ ROLE_DETAILS: {activeSlotMeta.label.toUpperCase()}</span>
+                    <span>⚙ SLOT ROLE: {activeSlotMeta.label.toUpperCase()}</span>
                     <span className="text-neutral-400 font-light text-[8px]">
-                      ID: {activeSlotMeta.id.toUpperCase()}
+                      ROLE: {activeSlotMeta.id.toUpperCase()}
                     </span>
                   </div>
                   <p className="text-neutral-600 font-light leading-relaxed">
                     {activeSlotMeta.description}
                   </p>
                   <div className="flex items-center gap-1.5 pt-1 text-[8.5px] font-mono text-neutral-500">
-                    <span className="uppercase text-[8px]">COMPATIBLE_LAYERS:</span>
+                    <span className="uppercase text-[8px]">COMPATIBLE CATEGORIES:</span>
                     <div className="flex flex-wrap gap-1">
                       {activeSlotMeta.compatibleCategories.map((cat) => (
                         <span key={cat} className="px-1 border border-neutral-300 rounded text-neutral-700 bg-white">
@@ -1217,8 +1233,8 @@ function UspStage() {
   return (
     <GameplayStageCard
       stageKey="usp"
-      title="Define Unique Selling Prop"
-      subtitle="Define your project's competitive advantage. Card choices introduce hidden tradeoffs between Innovation, Execution, and Pitch Potential."
+      title="Round 4: Choose Your Unique Advantage"
+      subtitle="What makes your project stand out from the competition? Choose a Unique Selling Proposition (USP) that highlights your innovation, speed, or feasibility."
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl mx-auto text-left font-mono text-[11px]">
         {generatedUSPs.map((opt) => (
@@ -1424,21 +1440,21 @@ function FeaturesStage() {
     <DndContext collisionDetection={closestCenter} sensors={sensors} onDragEnd={handleDragEnd}>
       <GameplayStageCard
         stageKey="features"
-        title="Backlog Prioritization Board"
-        subtitle="Prioritize product backlogs. Drag cards freely between Kanban columns or click them to cycle categories. Scope bloat severely penalizes compile execution."
+        title="Round 5: Prioritize Your Features"
+        subtitle="Time is ticking. You can't build everything in a weekend. Drag backlog features into priority buckets. Be careful: overloading 'Core MVP' will hurt your execution quality."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto text-left font-mono text-[11px]">
           {([
-            { id: 'backlog', label: 'Backlog Pool', empty: 'Empty Backlog' },
-            { id: 'must', label: 'Must Have', empty: 'Empty Slot' },
-            { id: 'nice', label: 'Nice to Have', empty: 'Empty Slot' },
-            { id: 'overkill', label: 'Overkill', empty: 'Empty Slot' },
+            { id: 'backlog', label: 'Feature Pool', empty: 'Empty Pool' },
+            { id: 'must', label: 'Core MVP', empty: 'Empty Slot' },
+            { id: 'nice', label: 'Stretch Goals', empty: 'Empty Slot' },
+            { id: 'overkill', label: 'Skip for Now', empty: 'Empty Slot' },
           ] as const).map((col) => {
             const items = generatedBacklog.filter(f => buckets[f.id] === col.id);
             return (
               <div key={col.id} className="flex flex-col space-y-2">
                 <span className="text-neutral-400 block text-[9px] uppercase tracking-wider font-bold">
-                  {col.label.toUpperCase()}_ZONE ({items.length}):
+                  {col.label.toUpperCase()} ({items.length}):
                 </span>
                 
                 <DropZone
@@ -1465,14 +1481,14 @@ function FeaturesStage() {
                             {feat.description}
                           </span>
                           <div className="flex items-center gap-1.5 mt-2.5 text-[7px] tracking-wide font-mono uppercase">
-                            <span className="text-neutral-400">EFF:</span>
+                            <span className="text-neutral-400">EFFORT:</span>
                             <span className={cn(
                               feat.effort === 'low' ? 'text-green-600 font-bold' :
                               feat.effort === 'medium' ? 'text-amber-600 font-bold' :
                               'text-rose-600 font-bold'
                             )}>{feat.effort}</span>
                             <span className="text-neutral-350">|</span>
-                            <span className="text-neutral-400">IMP:</span>
+                            <span className="text-neutral-400">IMPACT:</span>
                             <span className="text-neutral-900 font-bold">{feat.impact}</span>
                           </div>
                         </button>
@@ -1495,7 +1511,7 @@ function PitchDeckStage() {
 
   const [activeLibraryTab, setActiveLibraryTab] = useState<'all' | 'intro' | 'problem-solution' | 'technology' | 'business' | 'closing'>('all');
   const [searchQuery, setSearchQuery] = useState("");
-  const [consoleMsg, setConsoleMsg] = useState<string>("SYSTEM_BOOSTER_READY: SLIDESHOW_PARSER_ACTIVE");
+  const [consoleMsg, setConsoleMsg] = useState<string>("STORYBOARD ANALYZER ONLINE: READY TO PARSE PITCH STORY FLOW");
 
   // Ensure deck is initialized as 8 slots
   useEffect(() => {
@@ -1519,7 +1535,7 @@ function PitchDeckStage() {
       nextDeck[existingIdx] = "";
       setPitchDeck(nextDeck);
       playSnapSound();
-      setConsoleMsg(`SLIDE_REMOVED: ${AVAILABLE_SLIDES.find(s => s.id === slideId)?.name.toUpperCase()}`);
+      setConsoleMsg(`Removed slide: ${AVAILABLE_SLIDES.find(s => s.id === slideId)?.name.toUpperCase()}`);
     } else {
       // Find first empty slot
       const emptyIdx = nextDeck.indexOf("");
@@ -1527,10 +1543,10 @@ function PitchDeckStage() {
         nextDeck[emptyIdx] = slideId;
         setPitchDeck(nextDeck);
         playSnapSound();
-        setConsoleMsg(`SLIDE_ADDED: ${AVAILABLE_SLIDES.find(s => s.id === slideId)?.name.toUpperCase()} TO SLOT_${emptyIdx + 1}`);
+        setConsoleMsg(`Added slide: ${AVAILABLE_SLIDES.find(s => s.id === slideId)?.name.toUpperCase()} to storyboard position ${emptyIdx + 1}`);
       } else {
         playWarningTick();
-        setConsoleMsg("ERR: DECK_FULL_MAX_8_SLIDES. REMOVE A SLIDE BEFORE ADDING.");
+        setConsoleMsg("Warning: Pitch deck is full (maximum 8 slides). Remove a slide before adding a new one.");
       }
     }
   };
@@ -1542,7 +1558,7 @@ function PitchDeckStage() {
     setPitchDeck(nextDeck);
     playSnapSound();
     if (removedId) {
-      setConsoleMsg(`SLIDE_REMOVED: ${AVAILABLE_SLIDES.find(s => s.id === removedId)?.name.toUpperCase()} FROM POSITION_${slotIdx + 1}`);
+      setConsoleMsg(`Removed slide: ${AVAILABLE_SLIDES.find(s => s.id === removedId)?.name.toUpperCase()} from storyboard position ${slotIdx + 1}`);
     }
   };
 
@@ -1569,7 +1585,7 @@ function PitchDeckStage() {
 
       setPitchDeck(nextDeck);
       playSnapSound();
-      setConsoleMsg(`SLIDE_SWAPPED: POSITION_${sourceIdx + 1} <-> POSITION_${targetIdx + 1}`);
+      setConsoleMsg(`Swapped storyboard positions: ${sourceIdx + 1} and ${targetIdx + 1}`);
     } else {
       // Dragging from available slides list
       const slideId = activeIdStr;
@@ -1583,7 +1599,7 @@ function PitchDeckStage() {
       nextDeck[targetIdx] = slideId;
       setPitchDeck(nextDeck);
       playSnapSound();
-      setConsoleMsg(`SLIDE_DROPPED: ${AVAILABLE_SLIDES.find(s => s.id === slideId)?.name.toUpperCase()} ON POSITION_${targetIdx + 1}`);
+      setConsoleMsg(`Placed slide: ${AVAILABLE_SLIDES.find(s => s.id === slideId)?.name.toUpperCase()} on storyboard position ${targetIdx + 1}`);
     }
   };
 
@@ -1626,20 +1642,20 @@ function PitchDeckStage() {
   };
 
   const tabs = [
-    { id: 'all', label: 'ALL_SLIDES.SYS' },
-    { id: 'intro', label: 'INTRO.SYS' },
-    { id: 'problem-solution', label: 'STORY.SYS' },
-    { id: 'technology', label: 'TECH.SYS' },
-    { id: 'business', label: 'BIZ.SYS' },
-    { id: 'closing', label: 'CLOSE.SYS' }
+    { id: 'all', label: 'ALL SLIDES' },
+    { id: 'intro', label: 'INTRO' },
+    { id: 'problem-solution', label: 'STORY' },
+    { id: 'technology', label: 'TECH' },
+    { id: 'business', label: 'BUSINESS' },
+    { id: 'closing', label: 'CLOSING' }
   ] as const;
 
   return (
     <DndContext collisionDetection={closestCenter} sensors={sensors} onDragEnd={handleDragEnd}>
       <GameplayStageCard
         stageKey="pitchDeck"
-        title="Free-Form Storytelling Pitch Deck"
-        subtitle="Submit any narrative outline you construct. Drag slide components into storytelling positions, swap slots to reorder, or click items to toggle. Story flow, tech depth, and business metrics dictate narrative power."
+        title="Round 6: Build Your Pitch Deck"
+        subtitle="Prepare your story before facing the judges. Drag slide cards into your pitch storyboard positions. A cohesive narrative structure will win over the jury."
         disableNext={disableNext}
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-5xl mx-auto text-left font-mono text-[11px]">
@@ -1647,16 +1663,16 @@ function PitchDeckStage() {
           {/* Left Panel: Available Components with Search & Tabs (5 cols) */}
           <div className="lg:col-span-5 space-y-3 flex flex-col">
             <div className="flex items-center justify-between">
-              <span className="text-neutral-400 block text-[9px] uppercase tracking-wider font-bold">SLIDE_LIBRARY:</span>
+              <span className="text-neutral-400 block text-[9px] uppercase tracking-wider font-bold">SLIDE LIBRARY:</span>
               <span className="text-[8px] bg-neutral-100 border border-neutral-250 px-1 py-0.5 rounded text-neutral-600 font-bold uppercase tracking-tight select-none">
-                {slottedCount} / 8 SLIDES COMPILED
+                {slottedCount} / 8 SLIDES ADDED
               </span>
             </div>
 
             {/* Search Input bar */}
             <input
               type="text"
-              placeholder="SEARCH_SLIDE_CHIPS..."
+              placeholder="SEARCH SLIDES..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-neutral-50 border border-neutral-250 text-neutral-800 text-[10px] p-2 rounded focus:outline-none focus:border-neutral-400 font-mono"
@@ -1721,7 +1737,7 @@ function PitchDeckStage() {
                 })
               ) : (
                 <div className="text-center py-8 text-neutral-400 italic">
-                  [NO MATCHES FOUND FOR ACTIVE QUERY]
+                  [NO MATCHING SLIDES FOUND]
                 </div>
               )}
             </div>
@@ -1729,7 +1745,7 @@ function PitchDeckStage() {
 
           {/* Center Panel: Storytelling Positions Board (4 cols) */}
           <div className="lg:col-span-4 space-y-3">
-            <span className="text-neutral-400 block text-[9px] uppercase tracking-wider font-bold">PRESENTATION_TIMELINE_POSITIONS:</span>
+            <span className="text-neutral-400 block text-[9px] uppercase tracking-wider font-bold">YOUR PITCH STORYBOARD:</span>
             
             <div className="grid grid-cols-1 gap-2 border border-neutral-200 p-2.5 rounded bg-white max-h-[480px] overflow-y-auto">
               {Array(8).fill("").map((_, idx) => {
@@ -1750,7 +1766,7 @@ function PitchDeckStage() {
                           <div className="p-2.5 bg-neutral-900 border border-neutral-900 rounded flex items-start justify-between shadow-sm hover:border-neutral-800 transition-colors select-none text-white text-[10px]">
                             <div className="flex items-start gap-2 flex-1 min-w-0">
                               <span className="font-mono font-bold text-amber-400 text-[8.5px] uppercase shrink-0 mt-0.5">
-                                [{idx === 0 ? "OPENING" : idx === 7 ? "CLOSING" : `SEC ${idx}`}]
+                                [{idx === 0 ? "OPENING" : idx === 7 ? "CLOSING" : `SLIDE ${idx + 1}`}]
                               </span>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
@@ -1781,7 +1797,7 @@ function PitchDeckStage() {
                       ) : (
                         <div className="p-2 border border-dashed border-neutral-200 rounded flex flex-col justify-center min-h-[44px] select-none text-[9px] hover:border-neutral-400 hover:bg-neutral-50/30 transition-all duration-300">
                           <span className="font-mono text-neutral-450 uppercase tracking-tight font-bold text-[8px]">
-                            [{idx === 0 ? "OPENING" : idx === 7 ? "CLOSING" : `SECTION ${idx}`}] STORY_SPACE
+                            Storyboard Position {idx + 1}
                           </span>
                           <p className="text-[7.5px] text-muted-foreground font-sans mt-0.5 leading-none italic uppercase">
                             + Add Slide
@@ -1806,7 +1822,7 @@ function PitchDeckStage() {
             {/* Checklist HUD (Non-blocking visual aids) */}
             <div className="p-3 border border-neutral-300 rounded bg-white space-y-2.5 shadow-sm">
               <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider border-b border-neutral-200 pb-1 block">
-                STORYTELLING_COMPILER_HUD
+                STORY METRICS
               </span>
               
               <div className="space-y-1.5 font-mono text-[9.5px]">
@@ -1869,16 +1885,16 @@ function PitchDeckStage() {
             {/* Score & Archetype Live Monitor */}
             <div className="p-3 border border-neutral-300 rounded bg-white space-y-2 shadow-sm">
               <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider border-b border-neutral-200 pb-1 block">
-                NARRATIVE_STORY_COMPILER
+                PITCH STORYBOARD ANALYSIS
               </span>
               
               <div className="space-y-1 font-mono text-[9px]">
                 <div className="flex justify-between">
-                  <span className="text-neutral-500">DECK_ARCHETYPE:</span>
+                  <span className="text-neutral-500">PITCH TYPE:</span>
                   <span className="font-bold text-neutral-900 uppercase">{deckArchetype}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-500">NARRATIVE_FLOW:</span>
+                  <span className="text-neutral-500">STORY STRUCTURE:</span>
                   <span className={`font-bold uppercase ${
                     deckNarrativeQuality === 'Legendary'
                       ? "text-emerald-600"
@@ -1890,7 +1906,7 @@ function PitchDeckStage() {
                   }`}>{deckNarrativeQuality}</span>
                 </div>
                 <div className="flex justify-between border-t border-neutral-100 pt-1.5 mt-1 border-dashed">
-                  <span className="text-neutral-800 font-bold">NARRATIVE_SCORE:</span>
+                  <span className="text-neutral-800 font-bold">STORY QUALITY SCORE:</span>
                   <span className="font-bold text-neutral-950 text-xs">{pitchDeckScore} / 100</span>
                 </div>
               </div>
@@ -1900,7 +1916,7 @@ function PitchDeckStage() {
             <div className="flex-1 flex flex-col p-3 bg-neutral-950 border border-neutral-900 rounded shadow-md text-white font-mono text-[9px] min-h-[140px] overflow-hidden">
               <span className="text-neutral-500 uppercase border-b border-neutral-805 pb-1 mb-2 font-bold flex items-center gap-1 select-none">
                 <Terminal className="w-2.5 h-2.5 text-amber-500 animate-pulse" />
-                TIMELINE_AUDIT_CONSOLE
+                STORYBOARD CONSOLE
               </span>
               <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 font-mono leading-relaxed select-text">
                 <span className="text-amber-400 block">&gt; {consoleMsg}</span>
@@ -1918,7 +1934,7 @@ function PitchDeckStage() {
                   })
                 ) : (
                   <span className="text-neutral-600 italic block">
-                    [CONSOLE_IDLE: DECK TIMELINE IS EMPTY. READY FOR INJECT.]
+                    [Your storyboard is currently empty. Add slides to analyze your pitch structure.]
                   </span>
                 )}
               </div>
@@ -1935,175 +1951,168 @@ function PitchDeckStage() {
 // --- Stage 7: Mentor Phase --------------------------------------------------
 
 function MentorStage() {
-  const { techStack, solutionDirection, usp, features, updateScore, activeModifiers } = useGameStore();
-  const [isConsulted, setIsConsulted] = useState(false);
-  const [tips, setTips] = useState<string[]>([]);
+  const { 
+    techStack, 
+    solutionDirection, 
+    usp, 
+    features, 
+    activeModifiers,
+    generatedAdvisorAdvice,
+    setGeneratedAdvisorAdvice,
+    applyAdvisorAdvice,
+    rejectAdvisorAdvice,
+    selectedProblem,
+    gameMode,
+    pitchDeck,
+    businessModel,
+    generatedBusinessModels,
+    mentorConfidence,
+  } = useGameStore();
 
   const isMentorLocked = activeModifiers.includes("NO_MENTOR");
 
-  const handleConsult = () => {
-    if (isMentorLocked) return;
-    setIsConsulted(true);
-
-    const generatedTips: string[] = [];
-
-    // Analyze state to generate highly tailored tips
-    // Tip 1: Stack & Solution Direction Match
-    const ids = new Set(techStack.map((t) => t.id));
-    if (solutionDirection === 'ai-solution' && !ids.has('tech-openai') && !ids.has('tech-gemini')) {
-      generatedTips.push("⚠️ STACK_WARN: You are compiling an AI Solution but omitted OpenAI and Gemini API models from your pipeline.");
-    } else if (solutionDirection === 'iot-product' && !ids.has('tech-esp32') && !ids.has('tech-arduino')) {
-      generatedTips.push("⚠️ STACK_WARN: IoT Hardware products require ESP32/Arduino integration to verify baseline physical compiles.");
-    } else {
-      generatedTips.push("✅ STACK_ALIGNED: Framework choices display adequate category coverage for your selected project direction.");
+  // 1. Procedurally generate co-founder advice cards on stage load
+  useEffect(() => {
+    if (generatedAdvisorAdvice.length === 0 && selectedProblem) {
+      const seed = gameMode === 'daily' ? getDailySeed().toString() : undefined;
+      const advice = generateAdvisorAdvice(
+        selectedProblem, 
+        solutionDirection, 
+        usp, 
+        features, 
+        techStack, 
+        gameMode, 
+        seed,
+        pitchDeck,
+        businessModel,
+        generatedBusinessModels
+      );
+      setGeneratedAdvisorAdvice(advice);
     }
+  }, [generatedAdvisorAdvice, selectedProblem, solutionDirection, usp, features, techStack, gameMode, setGeneratedAdvisorAdvice, pitchDeck, businessModel, generatedBusinessModels]);
 
-    // Tip 2: USP & Stack Match (Update v1.6 dynamic USP awareness)
-    const { generatedUSPs } = useGameStore.getState();
-    const selectedUspObj = generatedUSPs.find(u => u.name === usp);
-
-    if (selectedUspObj) {
-      if (selectedUspObj.execution < 58) {
-        generatedTips.push(`⚠️ USP_WARN: Your dynamic USP '${selectedUspObj.name}' is highly differentiated but difficult to build within hackathon constraints.`);
-      } else {
-        generatedTips.push(`✅ USP_ALIGNED: Your chosen USP '${usp}' is highly practical and will yield stable execution rates.`);
-      }
-    } else {
-      generatedTips.push("💡 USP_TIP: Align unique selling propositions strictly with stack constraints to trigger judge pitch multipliers.");
-    }
-
-    // Tip 3: Scoping backlog (Update v1.6 dynamic feature backlog scoping and dependencies awareness)
-    const totalMustEffort = features.reduce((sum, f: any) => {
-      const eff = f.effort === 'high' ? 3 : f.effort === 'medium' ? 2 : 1;
-      return sum + eff;
-    }, 0);
-    const highComplexityCount = features.filter((f: any) => f.effort === 'high').length;
-
-    if (totalMustEffort > 6) {
-      generatedTips.push(`⚠️ SCOPE_WARN: Your feature scope appears unrealistic (${features.length} features with a heavy build effort). Consider ejecting complex items to restore Execution.`);
-    } else {
-      generatedTips.push("✅ SCOPE_ALIGNED: Balanced Must-Have scope secures high feasibility indices. Excellent MVP containment.");
-    }
-
-    if (highComplexityCount >= 2) {
-      generatedTips.push(`⚠️ SCOPE_COMPLEXITY: Your Must-Have backlog contains ${highComplexityCount} high-complexity modules. Building multiple advanced features will bottleneck compile execution.`);
-    }
-
-    // Dependency Checking
-    features.forEach((f: any) => {
-      if (f.dependsOn && !features.some(x => x.id === f.dependsOn)) {
-        generatedTips.push(`⚠️ DEPENDENCY_WARN: You have built the advanced feature '${f.name}' but missed its required baseline dependency '${f.dependsOnName || 'core'}'! It will trigger compiler errors.`);
-      }
-    });
-
-    // Tip 4: Storytelling Pitch Deck Audit
-    const { pitchDeck: currentDeck } = useGameStore.getState();
-    
-    // Rule A: Lead with the problem
-    const mentorProbIdx = currentDeck.indexOf('problem');
-    if (mentorProbIdx === -1) {
-      generatedTips.push("⚠️ DECK_STORY_WARN: Lead with the problem. You need to outline the core customer pain point early in your deck.");
-    } else if (mentorProbIdx > 2) {
-      generatedTips.push("⚠️ DECK_STORY_WARN: Lead with the problem. Your Problem slide is placed too deep in the deck; judges will lose context.");
-    } else {
-      generatedTips.push("✅ DECK_STORY_OK: Excellent. You established the problem statement early in your presentation sequence.");
-    }
-
-    // Rule B: Move Demo earlier
-    const mentorDemoIdx = currentDeck.indexOf('demo');
-    if (mentorDemoIdx !== -1 && mentorDemoIdx > 4) {
-      generatedTips.push("⚠️ DECK_STORY_WARN: Move Demo earlier. Hackathon judges have short attention spans; show the working MVP sooner.");
-    }
-
-    // Rule C: Consecutiveness Check
-    let consecutiveTech = 0;
-    let maxConsecutiveTech = 0;
-    currentDeck.forEach(s => {
-      const comp = AVAILABLE_SLIDES.find(item => item.id === s);
-      if (comp && (comp.category === 'technology' || comp.id === 'risk-analysis')) {
-        consecutiveTech++;
-        if (consecutiveTech > maxConsecutiveTech) maxConsecutiveTech = consecutiveTech;
-      } else {
-        consecutiveTech = 0;
-      }
-    });
-
-    if (maxConsecutiveTech >= 3) {
-      generatedTips.push("⚠️ DECK_TECH_BLOAT: Too many technical slides in a row. Break them up with customer story slides to keep non-technical judges engaged.");
-    }
-
-    // Rule D: Technical vs Business balance
-    const techCount = currentDeck.filter(s => {
-      const comp = AVAILABLE_SLIDES.find(item => item.id === s);
-      return comp && comp.category === 'technology';
-    }).length;
-    const bizCount = currentDeck.filter(s => {
-      const comp = AVAILABLE_SLIDES.find(item => item.id === s);
-      return comp && comp.category === 'business';
-    }).length;
-
-    if (bizCount > techCount && bizCount >= 2) {
-      generatedTips.push("💡 DECK_BALANCE: Your business case is stronger than your technical story. Startup-leaning judges will appreciate this, but ensure technical feasibility is clear.");
-    } else if (techCount > bizCount && techCount >= 2) {
-      generatedTips.push("💡 DECK_BALANCE: Your technical story is extremely robust. Ensure you map out monetization structures so investors see project survival path.");
-    }
-
-    setTips(generatedTips);
-
-    // Apply minor advisor reliance scoring penalty (representative of consult costs)
-    updateScore("pitch", Math.max(0, useGameStore.getState().score.pitch - 3));
-    updateScore("bonus", useGameStore.getState().score.bonus + 5);
-    useGameStore.setState({ mentorHintsUsed: 1 });
-    playScoreChord();
-  };
+  // Determine assessment text based on mentorConfidence score
+  let assessmentQuote = "A solid hackathon contender. Good scope discipline and logical deck structure.";
+  if (mentorConfidence < 40) {
+    assessmentQuote = "Honestly, I wouldn't touch this project with a ten-foot pole. Scrap it or pivot immediately.";
+  } else if (mentorConfidence < 70) {
+    assessmentQuote = "It has some potential, but the execution is currently highly questionable. Respond to feedback.";
+  } else if (mentorConfidence >= 90) {
+    assessmentQuote = "I would personally bet on this project. This is a potential winner.";
+  }
 
   return (
     <GameplayStageCard
       stageKey="mentor"
-      title="Consult Mentor Advisor"
-      subtitle="Interact with advisors once. Mentors provide context-aware feedback pointing out stack discrepancies, at the expense of a minor pitch penalty."
+      title="Round 7: Mentoring Round"
+      subtitle="Industry mentors have reviewed your progress. They'll suggest strategic improvements to your technology stack, product scope, or business model. You can follow their advice or stick to your plan."
     >
-      <div className="max-w-md mx-auto space-y-5 text-left font-mono text-[11px]">
-        {!isConsulted ? (
+      <div className="max-w-xl mx-auto font-mono text-[11px] space-y-4">
+        {isMentorLocked ? (
           <div className="text-center py-6 bg-white border border-neutral-200 rounded-md shadow-sm space-y-4">
-            <span className="text-[28px]">{isMentorLocked ? "🚫" : "🧠"}</span>
+            <span className="text-[28px]">🚫</span>
             <h3 className="font-bold text-neutral-900 uppercase">
-              {isMentorLocked ? "ADVISOR_MESH_MUTED" : "ADVISOR_MESH_READY"}
+              MENTORS UNAVAILABLE
             </h3>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto font-sans font-light">
-              {isMentorLocked
-                ? "Hardcore mode has offline locked advisor panels. You must proceed strictly without reviews."
-                : "Click below to boot the cognitive evaluator. This will analyze your active stack and backlog pipelines."}
+              Hardcore mode doesn't allow external guidance. You are entirely on your own.
             </p>
-            <Button
-              onClick={() => {
-                playMutedClick();
-                handleConsult();
-              }}
-              onMouseEnter={playSubtleHover}
-              disabled={isMentorLocked}
-              className="font-mono text-xs border border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none"
-            >
-              {isMentorLocked ? "MENTOR_ACCESS_MUTED" : "RUN_MENTOR_AUDIT.EXE"}
-            </Button>
           </div>
         ) : (
-          <div className="p-5 bg-neutral-900 border border-neutral-800 rounded-md text-white shadow-xl space-y-4 leading-relaxed font-mono">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-              <span className="text-emerald-400 font-bold">COMPILER_MENTOR_AUDIT: DONE</span>
-              <span className="text-neutral-500 text-[9px]">[ONE_TIME_USE_EXPIRED]</span>
+          <div className="space-y-4 text-left">
+            {/* Mentor Confidence HUD */}
+            <div className="p-4 bg-neutral-950 text-neutral-50 border border-neutral-800 rounded-md space-y-2">
+              <div className="flex justify-between items-center border-b border-neutral-800 pb-1.5">
+                <span className="text-neutral-400 font-bold uppercase tracking-wider text-[9px]">MENTOR CONFIDENCE RATING</span>
+                <span className={`text-[13px] font-bold ${mentorConfidence >= 70 ? 'text-emerald-400' : (mentorConfidence >= 40 ? 'text-amber-400' : 'text-red-400')}`}>
+                  {mentorConfidence} / 100
+                </span>
+              </div>
+              <p className="text-[9.5px] italic text-neutral-300 font-sans leading-relaxed">
+                "{assessmentQuote}"
+              </p>
             </div>
 
+            <span className="text-neutral-400 block text-[9px] uppercase border-b border-neutral-200 pb-1 mb-2">MENTOR ADVICE STREAMS ({generatedAdvisorAdvice.length}):</span>
+            
             <div className="space-y-3">
-              {tips.map((tip, idx) => (
-                <div key={idx} className="p-3 bg-neutral-950 rounded border border-neutral-800 text-[10px] text-neutral-200">
-                  {tip}
-                </div>
-              ))}
-            </div>
+              {generatedAdvisorAdvice.map((adv) => {
+                const persona = adv.mentorPersona || { name: "Co-Founder", role: "Strategic Advisor", avatar: "👤" };
+                return (
+                  <div key={adv.id} className="p-4 bg-white border border-neutral-200 rounded-md flex flex-col justify-between space-y-3 hover:shadow-[0_4px_12px_rgba(0,0,0,0.02)] transition-all">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex gap-2.5 items-start">
+                        <span className="text-[20px] select-none">{persona.avatar}</span>
+                        <div>
+                          <div className="flex gap-2 items-center">
+                            <h4 className="font-bold text-neutral-900 uppercase text-[11px]">{persona.name}</h4>
+                            <span className="px-1.5 py-0.5 bg-neutral-100 border border-neutral-200 text-neutral-600 rounded text-[7.5px] font-bold uppercase">
+                              {persona.role}
+                            </span>
+                          </div>
+                          <span className="text-neutral-400 text-[8px] uppercase font-bold block mt-0.5">RECOMMENDS: {adv.title}</span>
+                          <p className="text-[9.5px] text-neutral-700 mt-2 font-mono leading-relaxed bg-neutral-50 border-l-2 border-neutral-300 pl-2.5 py-1">
+                            "{adv.explanation}"
+                          </p>
+                        </div>
+                      </div>
+                      <div className="shrink-0">
+                        {adv.status === 'applied' && (
+                          <span className="px-2 py-0.5 border border-emerald-500 rounded text-emerald-600 font-bold uppercase text-[7.5px] whitespace-nowrap bg-emerald-50">
+                            ● ADVICE FOLLOWED
+                          </span>
+                        )}
+                        {adv.status === 'rejected' && (
+                          <span className="px-2 py-0.5 border border-red-400 rounded text-red-500 font-bold uppercase text-[7.5px] whitespace-nowrap bg-red-50">
+                            ● ADVICE IGNORED
+                          </span>
+                        )}
+                        {adv.status === 'pending' && (
+                          <span className="px-2 py-0.5 border border-amber-400 rounded text-amber-500 font-bold uppercase text-[7.5px] whitespace-nowrap bg-amber-50">
+                            ● MENTOR WAITING
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-            <div className="text-[9px] text-neutral-400 pt-2 border-t border-neutral-800 text-center font-sans font-light">
-              Audit loaded. Score penalty applied: PITCH -3 pts // COMPILER_BONUS +5 pts.
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-dashed border-neutral-200 pt-2.5 text-[9px]">
+                      <div>
+                        <span className="text-neutral-400 block uppercase text-[7.5px] font-bold">EXPECTED BENEFIT:</span>
+                        <span className="text-neutral-800 font-sans">{adv.expectedImpact}</span>
+                      </div>
+                      <div>
+                        <span className="text-neutral-400 block uppercase text-[7.5px] font-bold">CONSIDERATIONS:</span>
+                        <span className="text-amber-600 font-mono font-bold">{adv.tradeoffs}</span>
+                      </div>
+                    </div>
+
+                    {adv.status === 'pending' && (
+                      <div className="flex gap-2 pt-1 border-t border-dashed border-neutral-100 mt-1">
+                        <button
+                          onClick={() => {
+                            playScoreChord();
+                            applyAdvisorAdvice(adv.id);
+                          }}
+                          onMouseEnter={playSubtleHover}
+                          className="px-3 py-1 border border-neutral-900 bg-neutral-900 text-white rounded text-[9px] uppercase tracking-wider font-bold hover:bg-neutral-800 transition cursor-pointer"
+                        >
+                          [FOLLOW ADVICE]
+                        </button>
+                        <button
+                          onClick={() => {
+                            playMutedClick();
+                            rejectAdvisorAdvice(adv.id);
+                          }}
+                          onMouseEnter={playSubtleHover}
+                          className="px-3 py-1 border border-neutral-300 bg-white text-neutral-600 rounded text-[9px] uppercase tracking-wider font-bold hover:border-neutral-500 hover:text-neutral-800 transition cursor-pointer"
+                        >
+                          [IGNORE ADVICE]
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -2115,76 +2124,148 @@ function MentorStage() {
 // --- Stage 8: Business Model Phase ------------------------------------------
 
 function BusinessModelStage() {
-  const { businessModel, setBusinessModel, selectedProblem, usp, solutionDirection, updateScore } = useGameStore();
+  const { 
+    businessModel, 
+    setBusinessModel, 
+    generatedBusinessModels, 
+    setGeneratedBusinessModels, 
+    selectedProblem, 
+    usp, 
+    solutionDirection, 
+    techStack, 
+    features, 
+    gameMode,
+    updateScore 
+  } = useGameStore();
 
-  const options = [
-    { id: "Freemium", name: "Freemium Accounts", desc: "Free core profiles with premium upgrades (+Consumer Fit)" },
-    { id: "Subscription", name: "SaaS Subscription Tiers", desc: "Operational licensing charges (+Scalable Fit)" },
-    { id: "Marketplace", name: "Marketplace Commission", desc: "Peer trade processing percentages (+Market Fit)" },
-    { id: "B2B SaaS", name: "B2B SaaS Hubs", desc: "Corporate nodes integration agreements (+Corporate Fit)" },
-    { id: "Commission", name: "Transaction Commissions", desc: "Dynamic checkout cuts (+Fintech Fit)" },
-    { id: "Government Partnership", name: "Government Sponsorship", desc: "Public carbon offsets sponsorship (+Gov Fit)" },
-    { id: "Ads", name: "Ad network grids", desc: "Consumer eyeballs monetization (+Platform Fit)" },
-  ] as const;
-
-  const handleSelect = (id: typeof options[number]['id']) => {
-    setBusinessModel(id);
-
-    // Contextual operational alignment fit score calculations
-    let pitch = 65;
-    let execution = 60;
-
-    // Gov fits sustainability / campus problems
-    if (id === "Government Partnership" && (selectedProblem?.category === "sustainability" || selectedProblem?.category === "smart-campus")) {
-      pitch += 20;
+  // 1. Procedurally generate business models on stage load
+  useEffect(() => {
+    if (generatedBusinessModels.length === 0 && selectedProblem) {
+      const seed = gameMode === 'daily' ? getDailySeed().toString() : undefined;
+      const models = generateBusinessModels(selectedProblem, solutionDirection, usp, features, techStack, gameMode, seed);
+      setGeneratedBusinessModels(models);
     }
-    // B2B SaaS fits Scalable corporate solutions
-    if (id === "B2B SaaS" && (usp === "Most Scalable" || selectedProblem?.id === "prob-learnflow")) {
-      pitch += 18;
+  }, [generatedBusinessModels, selectedProblem, solutionDirection, usp, features, techStack, gameMode, setGeneratedBusinessModels]);
+
+  const handleSelect = (opt: any) => {
+    setBusinessModel(opt.id);
+
+    // Apply dynamic fit scoring
+    let pitch = 70;
+    let execution = 70;
+
+    if (opt.riskLevel === 'Low') {
+      execution += 15;
+    } else if (opt.riskLevel === 'High') {
+      pitch += 20;
+      execution -= 10;
+    } else {
+      pitch += 10;
       execution += 5;
     }
-    // Freemium fits mobile app directions
-    if (id === "Freemium" && solutionDirection === "mobile-app") {
-      pitch += 12;
-    }
 
-    updateScore("pitch", Math.min(pitch, 100));
-    updateScore("execution", Math.min(execution, 100));
+    updateScore("pitch", Math.max(0, Math.min(pitch, 100)));
+    updateScore("execution", Math.max(0, Math.min(execution, 100)));
+
+    // Regenerate pitch in real time
+    const updatedState = useGameStore.getState();
+    const nextPitch = generateCustomElevatorPitch(
+      updatedState.selectedProblem,
+      updatedState.solutionDirection,
+      updatedState.usp,
+      updatedState.features,
+      opt,
+      updatedState.generatedAdvisorAdvice,
+      updatedState.techStack
+    );
+    useGameStore.setState({ pitchText: nextPitch });
   };
 
   useEffect(() => {
-    if (!businessModel) {
-      handleSelect("Freemium");
+    if (!businessModel && generatedBusinessModels.length > 0) {
+      handleSelect(generatedBusinessModels[0]);
     }
-  }, [businessModel]);
+  }, [businessModel, generatedBusinessModels]);
+
+  const activeModel = generatedBusinessModels.find(m => m.id === businessModel) || null;
 
   return (
     <GameplayStageCard
       stageKey="businessModel"
-      title="Business Model Setup"
-      subtitle="Determine the operational business model template. Aligning operational models with problem statements unlocks maximum Pitch grades."
+      title="Round 8: Business Model Round"
+      subtitle="Your project needs a path to sustainability. Choose how your project creates value, who pays for it, and how it can grow beyond the hackathon."
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl mx-auto text-left font-mono text-[11px]">
-        {options.map((opt) => (
-          <button
-            key={opt.id}
-            onClick={() => {
-              playMutedClick();
-              handleSelect(opt.id);
-            }}
-            onMouseEnter={playSubtleHover}
-            className={`p-4 rounded-md border text-left flex flex-col justify-between transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none ${
-              businessModel === opt.id
-                ? "border-neutral-900 bg-neutral-50 shadow-sm font-bold"
-                : "border-neutral-200 hover:border-neutral-400 bg-white"
-            }`}
-          >
-            <span className="font-bold text-neutral-900 block">{opt.name}</span>
-            <span className="text-[9px] text-muted-foreground mt-2 block font-sans font-light leading-relaxed">
-              {opt.desc}
-            </span>
-          </button>
-        ))}
+      <div className="max-w-4xl mx-auto space-y-6 text-left font-mono text-[11px]">
+        {/* Model grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {generatedBusinessModels.map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => {
+                playMutedClick();
+                handleSelect(opt);
+              }}
+              onMouseEnter={playSubtleHover}
+              className={`p-4 rounded-md border text-left flex flex-col justify-between transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none ${
+                businessModel === opt.id
+                  ? "border-neutral-900 bg-neutral-50 shadow-sm font-bold"
+                  : "border-neutral-200 hover:border-neutral-400 bg-white"
+              }`}
+            >
+              <div>
+                <span className="font-bold text-neutral-900 block text-[11px]">{opt.name.toUpperCase()}</span>
+                <span className="text-[8px] text-neutral-400 italic block mt-1 font-sans">
+                  Value Prop: {opt.valueProp}
+                </span>
+                <span className="text-[9px] text-muted-foreground mt-2 block font-sans font-light leading-relaxed">
+                  {opt.desc}
+                </span>
+              </div>
+              <div className="mt-3 pt-2 border-t border-dashed border-neutral-200 flex justify-between items-center text-[8.5px]">
+                <span className="text-neutral-400 uppercase">RISK LEVEL:</span>
+                <span className={`font-bold uppercase ${
+                  opt.riskLevel === 'Low' ? 'text-emerald-600' :
+                  opt.riskLevel === 'High' ? 'text-red-500' : 'text-amber-500'
+                }`}>
+                  {opt.riskLevel}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Selected model details - Revenue Strategy Grid */}
+        {activeModel && (
+          <div className="p-5 bg-neutral-900 border border-neutral-950 text-white rounded-md shadow-lg space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+              <span className="text-emerald-400 font-bold text-[12px] uppercase">● YOUR REVENUE STRATEGY: {activeModel.name.toUpperCase()}</span>
+              <span className="text-neutral-500 text-[8px]">[STRATEGIC ALIGNMENT]</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-3 bg-neutral-950 rounded border border-neutral-800 space-y-1">
+                <span className="text-neutral-500 block uppercase text-[8px]">TARGET CUSTOMER:</span>
+                <span className="text-neutral-200 font-sans text-[10px] leading-relaxed">{activeModel.customer}</span>
+              </div>
+              <div className="p-3 bg-neutral-950 rounded border border-neutral-800 space-y-1">
+                <span className="text-neutral-500 block uppercase text-[8px]">VALUE EXCHANGE:</span>
+                <span className="text-neutral-200 font-sans text-[10px] leading-relaxed">{activeModel.monetization}</span>
+              </div>
+              <div className="p-3 bg-neutral-950 rounded border border-neutral-800 space-y-1">
+                <span className="text-neutral-500 block uppercase text-[8px]">PRICING STRUCTURE:</span>
+                <span className="text-emerald-400 block font-mono text-[10px] font-bold mt-1">{activeModel.pricingStructure}</span>
+              </div>
+              <div className="p-3 bg-neutral-950 rounded border border-neutral-800 space-y-1">
+                <span className="text-neutral-500 block uppercase text-[8px]">FUTURE ROADMAP:</span>
+                <span className="text-neutral-200 font-sans text-[10px] leading-relaxed">{activeModel.growthStrategy}</span>
+              </div>
+            </div>
+            
+            <div className="text-[8px] text-neutral-400 border-t border-neutral-800 pt-2 text-center font-sans font-light">
+              Revenue strategy successfully linked to your elevator pitch. Commercial viability verified.
+            </div>
+          </div>
+        )}
       </div>
     </GameplayStageCard>
   );
@@ -2200,76 +2281,94 @@ function PitchPrepStage() {
     techStack,
     features,
     businessModel,
+    generatedBusinessModels,
+    generatedAdvisorAdvice,
     pitchText,
     setPitchText,
   } = useGameStore();
 
-  const techNames = techStack.map((t) => t.name).join(", ");
-  const featureNames = features.map((f) => f.name).join(", ");
+  const activeModel = generatedBusinessModels.find(m => m.id === businessModel) || null;
 
-  const defaultPitch = `Hello, we are tackling the "${
-    selectedProblem?.title || "assigned"
-  }" challenge. Our solution is a ${
-    solutionDirection || "digital product"
-  } engineered to be ${
-    usp ? `the "${usp}"` : "highly optimized"
-  } version in the market. Powered by a robust stack of ${
-    techNames || "modern frameworks"
-  }, we deliver value using a ${
-    businessModel || "tailored"
-  } revenue strategy. This directly solves constraints like "${
-    selectedProblem?.constraints?.[0] || "core system complexity"
-  }" while leveraging our must-have features: ${
-    featureNames || "optimized workflow"
-  }.`;
+  // 1. Procedurally generate the high-caliber pitch on initial mount if empty
+  useEffect(() => {
+    if (!pitchText && selectedProblem) {
+      const pitch = generateCustomElevatorPitch(
+        selectedProblem,
+        solutionDirection,
+        usp,
+        features,
+        activeModel,
+        generatedAdvisorAdvice,
+        techStack
+      );
+      setPitchText(pitch);
+    }
+  }, [pitchText, selectedProblem, solutionDirection, usp, features, activeModel, generatedAdvisorAdvice, techStack, setPitchText]);
+
+  const handleResetPitch = () => {
+    playMutedClick();
+    const pitch = generateCustomElevatorPitch(
+      selectedProblem,
+      solutionDirection,
+      usp,
+      features,
+      activeModel,
+      generatedAdvisorAdvice,
+      techStack
+    );
+    setPitchText(pitch);
+  };
 
   const talkingPoints = [
-    `Engineered using ${techNames || "highly specialized components"} for maximum compiler throughput and scalability.`,
-    `Focused competitive advantage centered on the "${usp || "optimized value"}" unique selling proposition.`,
-    `Sustainable unit economics backed by a robust ${businessModel || "validated"} monetization loop.`,
+    `Stack Architecture: ${techStack.slice(0, 3).map(t => t.name).join(", ") || "Optimized layers"} backing our ${solutionDirection || "core MVP"}.`,
+    `Unique Selling Proposition: Differentiated via "${usp || "standard strategy"}".`,
+    `Business Strategy: Monetizing through ${activeModel?.name || "tailored models"} targeting ${activeModel?.customer || "our base customer segment"}.`,
   ];
-
-  useEffect(() => {
-    if (!pitchText) {
-      setPitchText(defaultPitch);
-    }
-  }, [pitchText, defaultPitch, setPitchText]);
 
   return (
     <GameplayStageCard
       stageKey="pitchPrep"
-      title="Compile Final Pitch"
-      subtitle="Synthesize your project choices into an elevator pitch. Customize your pitch statement below to prepare for the jury evaluation panel."
+      title="Round 9: Prepare Your Pitch"
+      subtitle="Review the summary of your project decisions. Read through your default elevator pitch script and customize it to make it your own."
     >
       <div className="max-w-xl mx-auto text-left font-mono text-[11px] space-y-4">
         {/* Dynamic Project Details Monospace summary */}
         <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-md space-y-2">
-          <span className="text-neutral-400 block text-[9px] uppercase border-b border-neutral-200 pb-1 mb-2">PROJECT_MANIFEST.TXT</span>
+          <span className="text-neutral-400 block text-[9px] uppercase border-b border-neutral-200 pb-1 mb-2 font-bold">PROJECT OVERVIEW</span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 text-[10px]">
             <div><span className="text-neutral-400">PROBLEM:</span> <span className="text-neutral-900 font-bold">{selectedProblem?.title.toUpperCase()}</span></div>
-            <div><span className="text-neutral-400">CATEGORY:</span> <span className="text-neutral-900 font-bold uppercase">{selectedProblem?.category}</span></div>
-            <div><span className="text-neutral-400">DIRECTION:</span> <span className="text-neutral-900 font-bold uppercase">{solutionDirection}</span></div>
+            <div><span className="text-neutral-400">TRACK:</span> <span className="text-neutral-900 font-bold uppercase">{selectedProblem?.category}</span></div>
+            <div><span className="text-neutral-400">FORMAT:</span> <span className="text-neutral-900 font-bold uppercase">{solutionDirection}</span></div>
             <div><span className="text-neutral-400">USP:</span> <span className="text-neutral-900 font-bold uppercase">{usp}</span></div>
-            <div><span className="text-neutral-400">MODEL:</span> <span className="text-neutral-900 font-bold uppercase">{businessModel}</span></div>
-            <div><span className="text-neutral-400">FEATURES:</span> <span className="text-neutral-900 font-bold">{features.length} IN_BACKLOG</span></div>
+            <div><span className="text-neutral-400">MODEL:</span> <span className="text-neutral-900 font-bold uppercase">{activeModel?.name || "N/A"}</span></div>
+            <div><span className="text-neutral-400">FEATURES:</span> <span className="text-neutral-900 font-bold">{features.length} IN BACKLOG</span></div>
           </div>
         </div>
 
         {/* Dynamic Elevator Pitch Generator */}
         <div className="space-y-1">
-          <span className="text-neutral-400 block text-[9px] uppercase">30_SECOND_ELEVATOR_PITCH.SH</span>
+          <div className="flex justify-between items-center">
+            <span className="text-neutral-400 block text-[9px] uppercase font-bold">YOUR 30-SECOND ELEVATOR PITCH</span>
+            <button
+              onClick={handleResetPitch}
+              onMouseEnter={playSubtleHover}
+              className="text-neutral-500 hover:text-neutral-900 text-[8px] font-bold uppercase border border-neutral-200 hover:border-neutral-400 px-2 py-0.5 rounded bg-white transition cursor-pointer"
+            >
+              [RESTORE DEFAULT PITCH]
+            </button>
+          </div>
           <textarea
             value={pitchText}
             onChange={(e) => setPitchText(e.target.value)}
-            rows={5}
-            className="w-full p-3 bg-white border border-neutral-900 rounded-md font-sans text-xs text-neutral-800 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none leading-relaxed shadow-inner"
+            rows={6}
+            className="w-full p-3 bg-white border border-neutral-900 rounded-md font-sans text-xs text-neutral-800 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none leading-relaxed shadow-inner mt-1"
             placeholder="Write your custom elevator pitch..."
           />
         </div>
 
         {/* Key Talking Points */}
         <div className="space-y-2 border-t border-dashed border-border pt-3">
-          <span className="text-neutral-400 block text-[9px] uppercase">KEY_DEMO_TALKING_POINTS.TXT</span>
+          <span className="text-neutral-400 block text-[9px] uppercase font-bold">KEY PRESENTATION TALKING POINTS</span>
           <ul className="space-y-1.5">
             {talkingPoints.map((pt, i) => (
               <li key={i} className="flex items-start gap-2 text-neutral-700 font-sans font-light text-xs">
@@ -2346,8 +2445,8 @@ function JudgeSpinStage() {
   return (
     <GameplayStageCard
       stageKey="judgeSpin"
-      title="Spin Judge Wheel"
-      subtitle="Engage the jury selector roulette. A randomized, expert judge profile will be selected to grade your project manifest."
+      title="Round 10: Spin for Your Lead Judge"
+      subtitle="Face the panel. Spin the wheel to draw your lead judge. Each judge has distinct expertise and grades your project using different criteria weights."
     >
       <div className="max-w-lg mx-auto flex flex-col items-center justify-center font-mono text-[11px] space-y-6">
         {/* SVG Wheel Roulette Container — bigger, with avatar images */}
@@ -2478,20 +2577,20 @@ function JudgeSpinStage() {
             <Button
               onClick={spinWheel}
               onMouseEnter={playSubtleHover}
-              className="font-mono text-xs border border-neutral-900 w-full max-w-[220px] focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none"
+              className="font-mono text-xs border border-neutral-900 w-full max-w-[220px] focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none cursor-pointer"
             >
-              ⚡ SPIN_ROULETTE.EXE
+              ⚡ DRAW LEAD JUDGE
             </Button>
           )}
 
           {judgeSpinState === "spinning" && (
-            <div className="text-xs text-muted-foreground animate-pulse py-2">
-              🎲 SHUFFLING_JURY_CHANNELS...
+            <div className="text-xs text-muted-foreground animate-pulse py-2 font-mono">
+              🎲 ASSEMBLING THE JURY PANEL...
             </div>
           )}
 
           {judgeSpinState === "done" && currentJudge && (
-            <div className="p-5 bg-neutral-50 border border-neutral-200 rounded-xl w-full text-left space-y-4">
+            <div className="p-5 bg-neutral-50 border border-neutral-200 rounded-xl w-full text-left space-y-4 font-mono">
               {/* Selected judge avatar + info row */}
               <div className="flex items-center gap-4">
                 <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-neutral-900 shadow-md">
@@ -2510,7 +2609,7 @@ function JudgeSpinStage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-neutral-400 block text-[9px] uppercase tracking-wider mb-0.5">SELECTED_JUDGE:</span>
+                  <span className="text-neutral-400 block text-[9px] uppercase tracking-wider mb-0.5 font-bold">YOUR LEAD JUDGE:</span>
                   <span className="font-bold text-neutral-900 text-base uppercase block leading-tight">{currentJudge.name}</span>
                   <span className="text-[10px] text-muted-foreground block font-sans font-light leading-snug mt-0.5">{currentJudge.title}</span>
                 </div>
@@ -2526,9 +2625,9 @@ function JudgeSpinStage() {
                   nextStage();
                 }}
                 onMouseEnter={playSubtleHover}
-                className="font-mono text-xs border border-neutral-900 w-full mt-2 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none"
+                className="font-mono text-xs border border-neutral-900 w-full mt-2 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none cursor-pointer"
               >
-                SUBMIT_TO_JURY.SH
+                SUBMIT PROJECT TO JUDGES
               </Button>
             </div>
           )}
@@ -2730,7 +2829,7 @@ function JudgingStage() {
       derivedStrengths.push("Cutting-edge integration of AI models with responsive frontend frameworks.");
     }
     if (techIds.has("tech-esp32") && techIds.has("tech-arduino")) {
-      derivedStrengths.push("High-fidelity matching of physical IoT boards with core IDE compilers.");
+      derivedStrengths.push("High-fidelity matching of physical IoT boards with local development environments.");
     }
     if (techIds.has("tech-supabase") && techIds.has("tech-postgres")) {
       derivedStrengths.push("Robust scalable database architecture matching PostgreSQL latency speeds.");
@@ -2739,7 +2838,7 @@ function JudgingStage() {
     if (features.length === 2 || features.length === 3) {
       derivedStrengths.push("Extremely lean and disciplined product scoping boundary rules.");
     } else if (features.length > 3) {
-      derivedWeaknesses.push("Severe product scope bloat. Team tried compiling too many Must-Have components.");
+      derivedWeaknesses.push("Severe product scope bloat. Team tried to build too many Must-Have components.");
     } else if (features.length < 2) {
       derivedWeaknesses.push("Under-scoped roadmap. MVP fails to meet baseline hackathon requirements.");
     }
@@ -2810,6 +2909,8 @@ function JudgingStage() {
           pitchDeckScore: useGameStore.getState().pitchDeckScore,
           deckNarrativeQuality: useGameStore.getState().deckNarrativeQuality,
           deckArchetype: useGameStore.getState().deckArchetype,
+          generatedBusinessModels: useGameStore.getState().generatedBusinessModels,
+          generatedAdvisorAdvice: useGameStore.getState().generatedAdvisorAdvice,
         });
 
         addJudgeFeedback({
@@ -2850,6 +2951,8 @@ function JudgingStage() {
       pitchDeckScore: useGameStore.getState().pitchDeckScore,
       deckNarrativeQuality: useGameStore.getState().deckNarrativeQuality,
       deckArchetype: useGameStore.getState().deckArchetype,
+      generatedBusinessModels: useGameStore.getState().generatedBusinessModels,
+      generatedAdvisorAdvice: useGameStore.getState().generatedAdvisorAdvice,
     });
 
     addJudgeFeedback({
@@ -2868,15 +2971,15 @@ function JudgingStage() {
   return (
     <GameplayStageCard
       stageKey="judging"
-      title="Jury Evaluation"
-      subtitle="The selected judge is evaluating your project manifest under the compiler lens."
+      title="Round 11: Pitch and Demo"
+      subtitle="Take the stage. The lead judge is reviewing your project pitch, architecture, and backlog decisions."
     >
       <div className="max-w-md mx-auto text-left font-mono text-[11px] space-y-4">
         {!evaluationComplete ? (
           <div className="p-5 bg-neutral-900 border border-neutral-800 rounded-md text-white shadow-xl space-y-4 leading-relaxed font-mono">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-              <span className="text-amber-400 font-bold animate-pulse">COMPILER_EVALUATION_IN_PROGRESS</span>
-              <span className="text-neutral-500 text-[9px]">[STAGED_REVIEW]</span>
+              <span className="text-amber-400 font-bold animate-pulse">PITCH PRESENTATION IN PROGRESS</span>
+              <span className="text-neutral-500 text-[9px]">[JURY REVIEWING]</span>
             </div>
 
             <div className="space-y-3 py-1 font-mono text-[10px]">
@@ -2890,12 +2993,12 @@ function JudgingStage() {
                         <span className={isDone ? "text-emerald-400 font-bold" : isActive ? "text-amber-400 animate-pulse font-bold" : "text-neutral-600"}>
                           {isDone ? "[✓]" : isActive ? "[▶]" : "[ ]"}
                         </span>
-                        <span className={isDone ? "text-neutral-105 font-bold" : isActive ? "text-amber-300 font-bold animate-pulse" : "text-neutral-500"}>
+                        <span className={isDone ? "text-neutral-100 font-bold" : isActive ? "text-amber-300 font-bold animate-pulse" : "text-neutral-500"}>
                           {step.label.toUpperCase()}
                         </span>
                       </div>
-                      <span className="text-[9px] text-neutral-500">
-                        {isDone ? "COMPLETE" : isActive ? "PARSING..." : "QUEUED"}
+                      <span className="text-[9px] text-neutral-505">
+                        {isDone ? "COMPLETE" : isActive ? "REVIEWING..." : "QUEUED"}
                       </span>
                     </div>
                     {isActive && (
@@ -2931,14 +3034,14 @@ function JudgingStage() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-neutral-400 block text-[8px] uppercase font-bold">JURY_FEEDBACK_COMMENT:</span>
+              <span className="text-neutral-400 block text-[8px] uppercase font-bold">JURY VERDICT:</span>
               <p className="text-[11px] text-neutral-800 font-sans italic bg-neutral-50 p-3 border border-neutral-200 rounded leading-relaxed">
                 "{judgeFeedback[judgeFeedback.length - 1]?.comment}"
               </p>
             </div>
 
             <div className="p-2.5 bg-neutral-900 border border-neutral-900 rounded text-center text-white">
-              <span className="text-[9px] text-neutral-400 block uppercase font-mono tracking-wider mb-0.5">COMPUTED_SCORE_INDEX</span>
+              <span className="text-[9px] text-neutral-450 block uppercase font-mono tracking-wider mb-0.5">JUDGE'S SCORE:</span>
               <span className="text-2xl font-black">{judgeFeedback[judgeFeedback.length - 1]?.score}/100</span>
             </div>
 
@@ -2948,9 +3051,9 @@ function JudgingStage() {
                 nextStage();
               }}
               onMouseEnter={playSubtleHover}
-              className="font-mono text-xs border border-neutral-900 w-full focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none"
+              className="font-mono text-xs border border-neutral-900 w-full focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none cursor-pointer"
             >
-              LOAD_RESULTS_DASHBOARD.SH
+              SEE FINAL RESULTS
             </Button>
           </div>
         )}
@@ -3011,15 +3114,15 @@ function ResultsStage() {
   const [prdCopied, setPrdCopied] = useState(false);
 
   const prdLogs = [
-    "INITIALIZING_STARTUP_COMPILER_V1.0...",
-    "EXTRACTING_DECISIONS_MANIFEST...",
-    "COMPILING_ARCHETYPE_METRICS...",
-    "RESOLVING_TECH_COMPATIBILITY_LAYERS...",
-    "INTEGRATING_USP_VALUE_LOOPS...",
-    "SIMULATING_MONETIZATION_ECONOMICS...",
-    "ASSESSING_CHAOS_FALLBACK_RISKS...",
-    "GENERATING_VENTURE_PRD_MARKDOWN...",
-    "COMPILATION_SUCCESSFUL."
+    "PREPARING STARTUP BRIEF V1.0...",
+    "EXTRACTING HACKATHON BUILD DECISIONS...",
+    "ANALYZING PROJECT ARCHETYPE METRICS...",
+    "RESOLVING TECHNOLOGY INTEGRATION LAYERS...",
+    "INTEGRATING UNIQUE ADVANTAGE (USP)...",
+    "ESTIMATING REVENUE TIER ECONOMICS...",
+    "ASSESSING RISK & OPERATIONAL ROADMAP...",
+    "GENERATING PRODUCT REQUIREMENTS BRIEF...",
+    "STARTUP BRIEF SUCCESSFULLY CREATED."
   ];
 
   useEffect(() => {
@@ -3323,7 +3426,7 @@ function ResultsStage() {
       derivedStrengths.push("Cutting-edge integration of AI models with Next.js frontend.");
     }
     if (techIds.has("tech-esp32") && techIds.has("tech-arduino")) {
-      derivedStrengths.push("High-fidelity matching of physical IoT boards with compilers.");
+      derivedStrengths.push("High-fidelity matching of physical IoT boards with software architecture.");
     }
     if (techIds.has("tech-supabase") && techIds.has("tech-postgres")) {
       derivedStrengths.push("Robust database architecture matching PostgreSQL latency speeds.");
@@ -3332,7 +3435,7 @@ function ResultsStage() {
     if (features.length === 2 || features.length === 3) {
       derivedStrengths.push("Extremely lean and disciplined product scoping boundary rules.");
     } else if (features.length > 3) {
-      derivedWeaknesses.push("Severe product scope bloat. Team tried compiling too many components.");
+      derivedWeaknesses.push("Severe product scope bloat. Team tried to build too many components.");
     } else if (features.length < 2) {
       derivedWeaknesses.push("Under-scoped roadmap. MVP fails to meet baseline requirements.");
     }
@@ -3417,20 +3520,20 @@ function ResultsStage() {
   return (
     <GameplayStageCard
       stageKey="results"
-      title="Hackathon Results"
-      subtitle="Jury evaluation complete. Review your archetype metrics, specialist feedback, and unlocked achievements."
+      title="Final Round: Hackathon Results"
+      subtitle="Jury evaluation complete. Review your project metrics, expert feedback, and unlocked achievements."
     >
       <div className="max-w-2xl mx-auto text-left font-mono text-[11px] space-y-6">
         
         {/* Results Main Banner Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="p-4 bg-neutral-900 border border-neutral-900 rounded text-center text-white flex flex-col justify-center shadow-sm">
-            <span className="text-[9px] text-neutral-400 block uppercase tracking-wider mb-1 font-bold">FINAL_SCORE_INDEX</span>
+            <span className="text-[9px] text-neutral-400 block uppercase tracking-wider mb-1 font-bold">FINAL SCORE</span>
             <span className="text-3xl font-black">{displayScore} <span className="text-xs font-normal text-neutral-400">/ 50</span></span>
           </div>
 
           <div className="p-4 bg-white border border-neutral-200 rounded text-center flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
-            <span className="text-[9px] text-neutral-400 block uppercase tracking-wider mb-2">LETTER_GRADE</span>
+            <span className="text-[9px] text-neutral-400 block uppercase tracking-wider mb-2">FINAL GRADE</span>
             <motion.div
               initial={{ scale: 3.5, rotate: -35, opacity: 0 }}
               animate={{ scale: 1, rotate: -8, opacity: 1 }}
@@ -3442,9 +3545,9 @@ function ResultsStage() {
           </div>
 
           <div className="p-4 bg-white border border-neutral-200 rounded text-center flex flex-col justify-center shadow-sm">
-            <span className="text-[9px] text-neutral-400 block uppercase tracking-wider mb-1">JURY_VERDICT</span>
+            <span className="text-[9px] text-neutral-400 block uppercase tracking-wider mb-1">JURY VERDICT</span>
             <span className="text-xs font-bold text-neutral-800 uppercase truncate">
-              {finalScore100 >= 70 ? "✅ PROJECT APPROVED" : "❌ COMPILE FAILED"}
+              {finalScore100 >= 70 ? "✅ PROJECT APPROVED" : "❌ SUBMISSION REJECTED"}
             </span>
           </div>
         </div>
@@ -3452,32 +3555,32 @@ function ResultsStage() {
         {/* Project Archetype Card */}
         <div className="border-2 border-double border-neutral-900 p-5 bg-white space-y-4 shadow-sm select-none">
           <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-            <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">PROJECT_ARCHETYPE_CLASSIFICATION</span>
+            <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">PROJECT CLASSIFICATION</span>
             <span className="text-[8px] bg-neutral-900 text-white font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
               {archetype.id}
             </span>
           </div>
 
           <div className="space-y-1">
-            <span className="text-[8px] text-neutral-400 block uppercase font-mono tracking-tight leading-none font-bold">ARCHETYPE CATEGORY</span>
+            <span className="text-[8px] text-neutral-400 block uppercase font-mono tracking-tight leading-none font-bold">PROJECT CATEGORY</span>
             <h3 className="text-lg font-black uppercase text-neutral-900 leading-none">{archetype.name}</h3>
             <span className="text-[10px] text-neutral-500 font-sans italic block mt-0.5">{archetype.subtitle}</span>
           </div>
 
           <p className="text-[11px] text-neutral-600 font-sans font-light leading-relaxed">
             {loadingRoast ? (
-              <span className="animate-pulse text-neutral-400">⏱️ COMPILING_DYNAMIC_JURY_ROAST_MANIFEST.EXE...</span>
+              <span className="animate-pulse text-neutral-400">⏱️ DRAWING DYNAMIC JURY FEEDBACK CRITIQUE...</span>
             ) : (
               aiRoast || archetype.description
             )}
           </p>
 
           <div className="border-t border-dashed border-neutral-200 pt-3 space-y-2.5">
-            <span className="text-[8px] text-neutral-400 block uppercase font-bold tracking-wider mb-1">ARCHETYPE COMPILER METRICS</span>
+            <span className="text-[8px] text-neutral-400 block uppercase font-bold tracking-wider mb-1">PROJECT CRITERIA METRICS</span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 font-mono text-[9px]">
               <div>
                 <div className="flex justify-between mb-0.5 text-neutral-500">
-                  <span>TECHNICAL DEPTH:</span>
+                  <span>TECHNICAL FEASIBILITY:</span>
                   <span className="font-bold text-neutral-900">{archetype.radarStats.techDepth}%</span>
                 </div>
                 <div className="w-full bg-neutral-100 border border-neutral-250 h-1.5 rounded-sm overflow-hidden">
@@ -3487,7 +3590,7 @@ function ResultsStage() {
 
               <div>
                 <div className="flex justify-between mb-0.5 text-neutral-500">
-                  <span>BUSINESS ACUTENESS:</span>
+                  <span>BUSINESS SUSTAINABILITY:</span>
                   <span className="font-bold text-neutral-900">{archetype.radarStats.businessAcuteness}%</span>
                 </div>
                 <div className="w-full bg-neutral-100 border border-neutral-250 h-1.5 rounded-sm overflow-hidden">
@@ -3497,7 +3600,7 @@ function ResultsStage() {
 
               <div>
                 <div className="flex justify-between mb-0.5 text-neutral-500">
-                  <span>DESIGN FINESSE:</span>
+                  <span>USER EXPERIENCE:</span>
                   <span className="font-bold text-neutral-900">{archetype.radarStats.designFinesse}%</span>
                 </div>
                 <div className="w-full bg-neutral-100 border border-neutral-250 h-1.5 rounded-sm overflow-hidden">
@@ -3507,7 +3610,7 @@ function ResultsStage() {
 
               <div>
                 <div className="flex justify-between mb-0.5 text-neutral-500">
-                  <span>SHIPPING SCRAPPINESS:</span>
+                  <span>HACKATHON SCRAPPINESS:</span>
                   <span className="font-bold text-neutral-900">{archetype.radarStats.shippingScrappiness}%</span>
                 </div>
                 <div className="w-full bg-neutral-100 border border-neutral-250 h-1.5 rounded-sm overflow-hidden">
@@ -3520,18 +3623,18 @@ function ResultsStage() {
 
         {/* Run Summary metadata card */}
         <div className="p-4 bg-stone-50 border border-neutral-200 rounded text-left font-mono text-[10px] space-y-2 select-none relative overflow-hidden shadow-sm">
-          <div className="absolute top-1 right-2 text-[8px] text-neutral-300 font-bold">RUN_SUMMARY_MANIFEST</div>
+          <div className="absolute top-1 right-2 text-[8px] text-neutral-300 font-bold">HACKATHON RUN SUMMARY</div>
           <span className="text-neutral-400 block text-[8px] uppercase border-b border-neutral-200 pb-1 mb-2 font-bold">RUN SUMMARY</span>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2.5 text-[10px]">
             <div><span className="text-neutral-400">PLAY MODE:</span> <span className="text-neutral-900 font-bold uppercase">{gameMode}</span></div>
-            <div><span className="text-neutral-400">DIFFICULTY:</span> <span className="text-neutral-900 font-bold uppercase">{difficulty || "N/A"}</span></div>
-            <div><span className="text-neutral-400">CHAOS EVENTS:</span> <span className="text-neutral-900 font-bold uppercase">
+            <div><span className="text-neutral-400">TIMER PACING:</span> <span className="text-neutral-900 font-bold uppercase">{difficulty || "N/A"}</span></div>
+            <div><span className="text-neutral-400">CHAOS COMPLICATIONS:</span> <span className="text-neutral-900 font-bold uppercase">
               {CHAOS_EVENTS.filter((e) => chaosHistory.includes(e.id) && (e.category === "technical" || e.category === "team")).length}
             </span></div>
-            <div><span className="text-neutral-400">MENTOR USED:</span> <span className="text-neutral-900 font-bold uppercase">{mentorHintsUsed > 0 ? "YES" : "NO"}</span></div>
-            <div><span className="text-neutral-400">JURY EVALUATOR:</span> <span className="text-neutral-900 font-bold uppercase">{currentJudge?.name || "N/A"}</span></div>
+            <div><span className="text-neutral-400">MENTOR REVIEWED:</span> <span className="text-neutral-900 font-bold uppercase">{mentorHintsUsed > 0 ? "YES" : "NO"}</span></div>
+            <div><span className="text-neutral-400">LEAD EVALUATOR:</span> <span className="text-neutral-900 font-bold uppercase">{currentJudge?.name || "N/A"}</span></div>
             <div>
-              <span className="text-neutral-400 block">ACTIVE MODIFIERS:</span>
+              <span className="text-neutral-400 block">SPECIAL RULES APPLIED:</span>
               <div className="flex flex-wrap gap-1 mt-1">
                 {activeModifiers && activeModifiers.length > 0 ? (
                   activeModifiers.map((modId) => {
@@ -3568,13 +3671,13 @@ function ResultsStage() {
               
               {/* Header block */}
               <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-                <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">PITCH_DECK_STORYTELLING_AUDIT</span>
+                <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">PITCH STORYBOARD FEEDBACK</span>
                 <div className="flex items-center gap-2">
                   <span className="text-[8px] bg-neutral-900 text-white font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                    {deckEval.archetype}
+                    STORY STRUCTURE: {deckEval.archetype.toUpperCase()}
                   </span>
                   <span className="text-[8px] border border-neutral-900 text-neutral-950 font-mono px-1.5 py-0.5 rounded font-black uppercase tracking-wider">
-                    GRADE {storyGrade}
+                    STORY GRADE: {storyGrade}
                   </span>
                 </div>
               </div>
@@ -3582,22 +3685,22 @@ function ResultsStage() {
               {/* Main metrics row */}
               <div className="grid grid-cols-3 gap-2 text-center font-mono">
                 <div className="p-2 bg-stone-50/50 border border-neutral-200 rounded">
-                  <span className="text-[8px] text-neutral-450 block uppercase mb-1">NARRATIVE_SCORE</span>
+                  <span className="text-[8px] text-neutral-450 block uppercase mb-1">STORY SCORE</span>
                   <span className="text-base font-bold text-neutral-900">{deckEval.score} / 100</span>
                 </div>
                 <div className="p-2 bg-stone-50/50 border border-neutral-200 rounded">
-                  <span className="text-[8px] text-neutral-450 block uppercase mb-1">FLOW_QUALITY</span>
+                  <span className="text-[8px] text-neutral-450 block uppercase mb-1">STORY FLOW</span>
                   <span className="text-xs font-bold text-neutral-800 uppercase">{deckEval.quality}</span>
                 </div>
                 <div className="p-2 bg-stone-50/50 border border-neutral-200 rounded">
-                  <span className="text-[8px] text-neutral-450 block uppercase mb-1">COMPILED_SLIDES</span>
+                  <span className="text-[8px] text-neutral-450 block uppercase mb-1">TOTAL SLIDES</span>
                   <span className="text-xs font-bold text-neutral-800 uppercase">{pitchDeck.filter(s => s !== "").length} slides</span>
                 </div>
               </div>
 
               {/* Sub-score Bars (Narrative Analysis) */}
               <div className="border-t border-dashed border-neutral-200 pt-3.5 space-y-2.5">
-                <span className="text-[8px] text-neutral-400 block uppercase font-bold tracking-wider mb-1">NARRATIVE_DIMENSIONS_ANALYSIS</span>
+                <span className="text-[8px] text-neutral-400 block uppercase font-bold tracking-wider mb-1">NARRATIVE ANALYSIS</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 font-mono text-[9px]">
                   
                   <div>
@@ -3665,14 +3768,14 @@ function ResultsStage() {
 
               {/* Narrative Strengths & Weaknesses Logs */}
               <div className="border-t border-dashed border-neutral-200 pt-3 space-y-1.5 font-mono text-[9px]">
-                <span className="text-[8px] text-neutral-400 block uppercase font-bold tracking-wider mb-1">NARRATIVE_AUDITOR_FEEDBACK</span>
+                <span className="text-[8px] text-neutral-400 block uppercase font-bold tracking-wider mb-1">STORYBOARD FEEDBACK</span>
                 {deckEval.feedback.length > 0 ? (
                   <div className="space-y-1.5 leading-normal max-h-[140px] overflow-y-auto pr-1">
                     {deckEval.feedback.map((log, i) => {
                       const isWarn = log.includes("Missing") || log.includes("before") || log.includes("penalty") || log.includes("muddled") || log.includes("Vaporware") || log.includes("Duplicate") || log.includes("Dry");
                       return (
                         <div key={i} className="flex gap-1.5">
-                          <span className={isWarn ? "text-rose-505 font-bold" : "text-emerald-600 font-bold"}>
+                          <span className={isWarn ? "text-rose-500 font-bold" : "text-emerald-600 font-bold"}>
                             {isWarn ? "[-]" : "[+]"}
                           </span>
                           <span className={isWarn ? "text-neutral-600" : "text-neutral-800"}>
@@ -3694,7 +3797,7 @@ function ResultsStage() {
         {/* Strengths & Weaknesses */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-dashed border-neutral-200 pt-4">
           <div className="space-y-2">
-            <span className="text-emerald-600 block text-[9px] uppercase font-bold">+++ PROJECT_STRENGTHS:</span>
+            <span className="text-emerald-600 block text-[9px] uppercase font-bold">+++ PROJECT STRENGTHS:</span>
             <ul className="space-y-1.5">
               {strengths.map((str, idx) => (
                 <li key={idx} className="flex gap-2 text-neutral-800 font-sans font-light text-[11px]">
@@ -3706,7 +3809,7 @@ function ResultsStage() {
           </div>
 
           <div className="space-y-2">
-            <span className="text-rose-600 block text-[9px] uppercase font-bold">--- PROJECT_WEAKNESSES:</span>
+            <span className="text-rose-600 block text-[9px] uppercase font-bold">--- AREAS FOR IMPROVEMENT:</span>
             <ul className="space-y-1.5">
               {weaknesses.map((wk, idx) => (
                 <li key={idx} className="flex gap-2 text-neutral-800 font-sans font-light text-[11px]">
@@ -3726,12 +3829,12 @@ function ResultsStage() {
             </div>
             
             <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-              <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">JURY_QUOTE_OF_THE_RUN</span>
+              <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">JUDGE'S CRITIQUE</span>
               <span className="text-[8px] font-sans text-neutral-500 uppercase font-bold">MEMO // {currentJudge.personality}</span>
             </div>
 
             <p className="text-xs text-neutral-850 font-sans italic relative z-10 leading-relaxed pt-1 select-text">
-              "{loadingRoast ? "⏱️ COMPILING_DYNAMIC_JURY_ROAST_MANIFEST.EXE..." : (aiRoast || feedback?.comment)}"
+              "{loadingRoast ? "⏱️ DRAWING DYNAMIC JURY FEEDBACK CRITIQUE..." : (aiRoast || feedback?.comment)}"
             </p>
 
             <div className="flex items-center gap-2.5 pt-2 border-t border-dashed border-neutral-200">
@@ -3752,7 +3855,7 @@ function ResultsStage() {
               isQualified ? "border-2 border-double border-neutral-900" : "border border-dashed border-neutral-300 opacity-80"
             }`}>
               <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
-                <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">STARTUP_ACCELERATION_GATES</span>
+                <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">STARTUP ACCELERATION INITIATIVE</span>
                 <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${
                   isQualified ? "bg-emerald-600 text-white" : "bg-neutral-100 text-neutral-500"
                 }`}>
@@ -3762,12 +3865,12 @@ function ResultsStage() {
 
               <div className="space-y-1 text-left">
                 <h3 className={`text-sm font-black uppercase flex items-center gap-1.5 ${isQualified ? "text-neutral-900" : "text-neutral-400"}`}>
-                  {isQualified ? "🚀 This Idea Has Potential" : "🔒 Startup PRD Generator"}
+                  {isQualified ? "🚀 This Idea Has Venture Potential" : "🔒 Startup PRD Generator"}
                 </h3>
                 <p className="text-[11px] text-neutral-600 font-sans font-light leading-relaxed">
                   {isQualified 
                     ? "The judges believe this project is worth exploring further. Generate a startup-grade Product Requirements Document based on your hackathon decisions."
-                    : "Get a grade B or above to unlock this startup product compiler."
+                    : "Get a grade B or above to unlock this startup product generator."
                   }
                 </p>
               </div>
@@ -3786,7 +3889,7 @@ function ResultsStage() {
                     : "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
                 }`}
               >
-                {isQualified ? "GENERATE_STARTUP_PRD.EXE" : "GENERATE_STARTUP_PRD.EXE (LOCKED)"}
+                {isQualified ? "DOWNLOAD STARTUP PRD" : "DOWNLOAD STARTUP PRD (LOCKED)"}
               </Button>
             </div>
           );
@@ -3794,7 +3897,7 @@ function ResultsStage() {
 
         {/* Achievements Grid */}
         <div className="border-t border-dashed border-neutral-200 pt-4">
-          <span className="text-neutral-400 block text-[9px] uppercase mb-3">GLOBAL_ACHIEVEMENTS_DECRYPTION:</span>
+          <span className="text-neutral-400 block text-[9px] uppercase mb-3">GLOBAL ACHIEVEMENTS UNLOCKED:</span>
           <motion.div
             variants={{
               hidden: { opacity: 0 },
@@ -3841,7 +3944,7 @@ function ResultsStage() {
 
         {/* Shareable Result Card */}
         <div className="border-t border-dashed border-neutral-200 pt-4 space-y-2">
-          <span className="text-neutral-400 block text-[9px] uppercase">SHAREABLE_SOCIAL_MANIFEST.ASCII</span>
+          <span className="text-neutral-400 block text-[9px] uppercase">SHAREABLE SCORECARD (ASCII)</span>
           <pre className="p-3 bg-neutral-900 text-neutral-100 rounded text-[9px] font-mono leading-tight text-left overflow-x-auto whitespace-pre select-all">
             {generateAsciiCard()}
           </pre>
@@ -3851,7 +3954,7 @@ function ResultsStage() {
             variant="outline"
             className="w-full font-mono text-xs border border-neutral-900 h-8 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none cursor-pointer"
           >
-            {copied ? "[MANIFEST_COPIED_TO_CLIPBOARD.TXT]" : "COPY_MANIFEST_ASCII.EXE"}
+            {copied ? "[SCORECARD COPIED]" : "COPY SCORECARD"}
           </Button>
         </div>
 
@@ -3865,7 +3968,7 @@ function ResultsStage() {
             onMouseEnter={playSubtleHover}
             className="w-full font-mono text-xs border border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none cursor-pointer"
           >
-            🔄 REBOOT_SIMULATOR.EXE
+            🔄 RESTART HACKATHON
           </Button>
 
           <Link href="/" className="w-full">
@@ -3878,7 +3981,7 @@ function ResultsStage() {
               variant="outline"
               className="w-full font-mono text-xs border border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none focus:outline-none cursor-pointer hover:bg-neutral-50"
             >
-              🏠 RETURN_TO_HOME.EXE
+              🏠 RETURN TO LOBBY
             </Button>
           </Link>
         </div>
@@ -3891,11 +3994,11 @@ function ResultsStage() {
               {/* Header */}
               <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-neutral-400">PRD_MANIFEST_COMPILER</span>
+                  <span className="font-mono text-xs text-neutral-400">STARTUP_PRD_GENERATOR</span>
                   <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
                     prdLoadingStep === prdLogs.length - 1 ? "bg-emerald-600 text-white" : "bg-neutral-900 text-white animate-pulse"
                   }`}>
-                    {prdLoadingStep === prdLogs.length - 1 ? "READY" : "COMPILING"}
+                    {prdLoadingStep === prdLogs.length - 1 ? "READY" : "GENERATING"}
                   </span>
                 </div>
                 <button
@@ -3912,7 +4015,7 @@ function ResultsStage() {
               {/* Title */}
               <div className="text-left space-y-1">
                 <h2 className="text-xl font-black uppercase text-neutral-900">
-                  Startup PRD Compiler
+                  Startup PRD Generator
                 </h2>
                 <p className="text-[10px] text-muted-foreground font-mono">
                   Decisions ledger parsed into product requirements parameters.
@@ -3925,19 +4028,19 @@ function ResultsStage() {
                   /* Sequential Compilation Logs View */
                   <div className="flex-1 flex flex-col justify-center gap-4">
                     <div className="text-center font-mono text-xs text-neutral-500 uppercase tracking-widest animate-pulse mb-2">
-                      COMPILING_STARTUP_ARGUMENTS...
+                      GENERATING STARTUP BRIEF...
                     </div>
                     
                     <div className="bg-neutral-950 p-4 rounded font-mono text-[10px] text-neutral-100 min-h-[180px] flex flex-col justify-between shadow-inner">
                       <div className="space-y-1 text-left">
                         {prdLogs.slice(0, prdLoadingStep + 1).map((log, i) => (
-                          <div key={i} className={log.includes("SUCCESSFUL") ? "text-emerald-400 font-bold" : "text-neutral-300"}>
+                          <div key={i} className={log.includes("SUCCESSFUL") || log.includes("CREATED") ? "text-emerald-400 font-bold" : "text-neutral-300"}>
                             {i === prdLoadingStep ? (
                               <span className="typewriter-cursor">
-                                {`> [SYS] ${log}`}
+                                {`> [SYSTEM] ${log}`}
                               </span>
                             ) : (
-                              `> [SYS] ${log}`
+                              `> [SYSTEM] ${log}`
                             )}
                           </div>
                         ))}
@@ -3994,7 +4097,7 @@ function ResultsStage() {
                               isNote ? "bg-neutral-50 border-neutral-900 text-neutral-800" : "bg-amber-50 border-amber-500 text-amber-900"
                             }`}>
                               <span className="font-bold uppercase block mb-1">
-                                {isNote ? "💡 NOTE_MANIFEST:" : "⚠️ WARNING_MANIFEST:"}
+                                {isNote ? "💡 ORGANIZER NOTE:" : "⚠️ WARNING:"}
                               </span>
                               {renderFormattedText(compiledPrd.split("\n")[idx + 1]?.replace("> ", "") || "")}
                             </div>
@@ -4017,7 +4120,7 @@ function ResultsStage() {
                         variant="outline"
                         className="font-mono text-[10px] h-9 border border-neutral-900 cursor-pointer focus:outline-none"
                       >
-                        {prdCopied ? "[COPIED_TO_CLIPBOARD.TXT]" : "COPY_MARKDOWN.TXT"}
+                        {prdCopied ? "[COPIED TO CLIPBOARD]" : "COPY MARKDOWN"}
                       </Button>
                       <Button
                         onClick={handleDownloadPrd}
@@ -4025,7 +4128,7 @@ function ResultsStage() {
                         variant="outline"
                         className="font-mono text-[10px] h-9 border border-neutral-900 cursor-pointer focus:outline-none"
                       >
-                        DOWNLOAD_PRD.MD
+                        DOWNLOAD PRD
                       </Button>
                       <Button
                         onClick={() => {
@@ -4035,7 +4138,7 @@ function ResultsStage() {
                         onMouseEnter={playSubtleHover}
                         className="font-mono text-[10px] h-9 bg-neutral-900 text-white hover:bg-neutral-800 border border-neutral-900 cursor-pointer focus:outline-none"
                       >
-                        CLOSE_MANIFEST.EXE
+                        CLOSE GENERATOR
                       </Button>
                     </div>
                   </div>
@@ -4088,7 +4191,7 @@ function DevDebugPanel() {
   return (
     <div className="fixed bottom-12 right-4 z-50 w-72 bg-card border border-neutral-400 rounded-lg shadow-xl p-4 font-mono text-xs">
       <div className="flex items-center justify-between border-b border-border pb-2 mb-2 font-bold text-neutral-900">
-        <span>DEV_DEBUG_PANEL.SH</span>
+        <span>DEV_DEBUG_PANEL</span>
         <button onClick={() => setIsOpen(false)} className="hover:text-red-500 font-bold cursor-pointer">[X]</button>
       </div>
 
@@ -4102,7 +4205,7 @@ function DevDebugPanel() {
           <div className="flex justify-between"><span>EXECUTION/FEAS:</span><span>{score.execution}/100</span></div>
           <div className="flex justify-between"><span>DESIGN:</span><span>{score.design}/100</span></div>
           <div className="flex justify-between"><span>PITCH_POTENTIAL:</span><span>{score.pitch}/100</span></div>
-          <div className="flex justify-between font-bold text-neutral-800 pt-0.5"><span>COMPILER_BONUS:</span><span>+{score.bonus} pts</span></div>
+          <div className="flex justify-between font-bold text-neutral-800 pt-0.5"><span>BONUS_POINTS:</span><span>+{score.bonus} pts</span></div>
         </div>
       </div>
 
@@ -4267,7 +4370,7 @@ function ChaosEventOverlay() {
         {/* Choice buttons */}
         <div className="space-y-3">
           <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
-            CHOOSE_TACTICAL_ACTION.EXE:
+            CHOOSE TACTICAL ACTION:
           </span>
           {activeChaosEvent.choices.map((choice, index) => (
             <button
@@ -4365,7 +4468,7 @@ export default function GamePage() {
         return (
           <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
             <span className="font-mono text-xs text-muted-foreground animate-pulse">
-              INITIALIZING_COMPILER_DRIVERS...
+              PREPARING SIMULATOR SESSION...
             </span>
           </div>
         );

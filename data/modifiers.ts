@@ -64,7 +64,7 @@ export const MODIFIERS: Modifier[] = [
     id: "TECH_WIZARD",
     name: "Tech Wizard",
     description: "High standard for framework pipeline integrations.",
-    effectDescription: "Tech synergies (e.g. Next.js + Vercel) grant double compilation bonus points."
+    effectDescription: "Tech synergies (e.g. Next.js + Vercel) grant double synergy bonus points."
   },
   {
     id: "SOLO_DEV",
@@ -87,7 +87,7 @@ export const MODIFIERS: Modifier[] = [
   {
     id: "OPEN_SOURCE",
     name: "Open Source Mandate",
-    description: "All compiler nodes must be published under public open source licenses.",
+    description: "All project modules must be published under public open source licenses.",
     effectDescription: "Failing to select the open source mandate choice penalizes innovation by -15."
   },
   {
@@ -123,7 +123,7 @@ export const MODIFIERS: Modifier[] = [
   {
     id: "CLOUD_NATIVE",
     name: "Cloud Native",
-    description: "AWS and Vercel are both required in the compiler stack.",
+    description: "AWS and Vercel are both required in your architecture stack.",
     effectDescription: "Failing to select both Vercel and AWS penalizes innovation score by -15."
   },
   {

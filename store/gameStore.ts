@@ -28,11 +28,14 @@ import type {
   ScoreBreakdown,
   ChaosEvent,
   GameStats,
+  GeneratedBusinessModel,
+  AdvisorAdvice,
 } from '@/types/game';
 import { getRandomChaosEvent, CHAOS_EVENTS } from '@/data/chaosEvents';
 import { getDailyChallenge } from '@/lib/dailyChallenge';
 import { evaluatePitchDeck } from '@/lib/pitchDeckEvaluator';
-import { TECH_REGISTRY, toRegistryId } from '@/data/techRegistry';
+import { TECH_REGISTRY, toRegistryId, toStoreId } from '@/data/techRegistry';
+import { generateCustomElevatorPitch, calculateMentorConfidence } from '@/lib/projectStrategyGenerator';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -172,9 +175,14 @@ const initialGameState = {
   deckNarrativeQuality: 'Fragmented',
   deckArchetype: 'Custom Deck',
 
-  // Update v1.6: AI Generated Project Design System variables
+  // Update :: AI Generated Project Design System variables
   generatedUSPs: [] as any[],
   generatedBacklog: [] as any[],
+
+  // Update v1.7: AI Co-Founder System variables
+  generatedBusinessModels: [] as GeneratedBusinessModel[],
+  generatedAdvisorAdvice: [] as AdvisorAdvice[],
+  mentorConfidence: 50,
 };
 
 // ---------------------------------------------------------------------------
@@ -360,6 +368,207 @@ export const useGameStore = create<GameState & GameActions>()(
 
         setGeneratedUSPs: (usps) => set({ generatedUSPs: usps }, false, 'core/setGeneratedUSPs'),
         setGeneratedBacklog: (backlog) => set({ generatedBacklog: backlog }, false, 'core/setGeneratedBacklog'),
+        setGeneratedBusinessModels: (models) => set({ generatedBusinessModels: models }, false, 'core/setGeneratedBusinessModels'),
+        setGeneratedAdvisorAdvice: (advice) => set({ generatedAdvisorAdvice: advice }, false, 'core/setGeneratedAdvisorAdvice'),
+
+        applyAdvisorAdvice: (adviceId) => {
+          const state = get();
+          const nextAdvice = state.generatedAdvisorAdvice.map(adv => {
+            if (adv.id === adviceId) {
+              return { ...adv, status: 'applied' as const };
+            }
+            return adv;
+          });
+
+          const targetAdvice = state.generatedAdvisorAdvice.find(a => a.id === adviceId);
+          if (!targetAdvice) return;
+
+          // 1. Apply score modifiers
+          const mods = targetAdvice.scoreModifiers;
+          const nextScore = { ...state.score };
+          if (mods.innovation !== undefined) nextScore.innovation = Math.max(0, Math.min(100, nextScore.innovation + mods.innovation));
+          if (mods.execution !== undefined) nextScore.execution = Math.max(0, Math.min(100, nextScore.execution + mods.execution));
+          if (mods.design !== undefined) nextScore.design = Math.max(0, Math.min(100, nextScore.design + mods.design));
+          if (mods.pitch !== undefined) nextScore.pitch = Math.max(0, Math.min(100, nextScore.pitch + mods.pitch));
+          if (mods.bonus !== undefined) nextScore.bonus = nextScore.bonus + mods.bonus;
+
+          nextScore.total = nextScore.innovation + nextScore.execution + nextScore.design + nextScore.pitch + nextScore.bonus;
+
+          // 2. Perform side effects
+          let nextFeatures = [...state.features];
+          let nextTechStack = [...state.techStack];
+          let nextPitchDeck = [...state.pitchDeck];
+          let nextGeneratedBusinessModels = [...state.generatedBusinessModels];
+          let nextUsp = state.usp;
+
+          const actionType = targetAdvice.action?.type;
+
+          if (actionType === 'replace_tech') {
+            const fromIds = targetAdvice.action?.payload?.from || [];
+            const toId = targetAdvice.action?.payload?.to;
+            if (toId) {
+              const regItem = TECH_REGISTRY.find(r => r.id === toRegistryId(toId));
+              if (regItem) {
+                const storeId = toStoreId(regItem.id);
+                if (fromIds.length > 0) {
+                  nextTechStack = state.techStack.map(t => {
+                    if (fromIds.includes(toRegistryId(t.id))) {
+                      return {
+                        id: storeId,
+                        name: regItem.name,
+                        icon: 'layers',
+                        category: t.category,
+                        difficulty: regItem.difficultyScore,
+                        synergies: regItem.synergy.map(toStoreId),
+                      };
+                    }
+                    return t;
+                  });
+                } else {
+                  // Fallback Add Tech
+                  const alreadyHas = state.techStack.some(t => toRegistryId(t.id) === toRegistryId(toId));
+                  if (!alreadyHas) {
+                    const categorySlot = regItem.category.toLowerCase().includes('frontend') ? 'frontend' : 
+                                         (regItem.category.toLowerCase().includes('database') ? 'database' : 'backend');
+                    const newItem: TechItem = {
+                      id: storeId,
+                      name: regItem.name,
+                      icon: 'layers',
+                      category: categorySlot,
+                      difficulty: regItem.difficultyScore,
+                      synergies: regItem.synergy.map(toStoreId),
+                    };
+                    nextTechStack = [...state.techStack.filter(t => t.category !== categorySlot), newItem];
+                  }
+                }
+              }
+            }
+          } else if (actionType === 'remove_feature' || actionType === 'reduce_scope') {
+            nextFeatures = state.features.filter((f: any) => f.impact !== 'low');
+            const highEffortFeat = nextFeatures.find((f: any) => f.effort === 'high');
+            if (highEffortFeat) {
+              nextFeatures = nextFeatures.filter((f: any) => f.id !== highEffortFeat.id);
+            }
+          } else if (actionType === 'move_slide') {
+            const addSlide = targetAdvice.action?.payload?.addSlide;
+            if (addSlide) {
+              if (!nextPitchDeck.includes(addSlide)) {
+                const tyIdx = nextPitchDeck.indexOf('thank-you');
+                if (tyIdx !== -1) {
+                  nextPitchDeck.splice(tyIdx, 0, addSlide);
+                } else {
+                  nextPitchDeck.push(addSlide);
+                }
+              }
+            } else {
+              const fromSlide = targetAdvice.action?.payload?.from;
+              const toSlide = targetAdvice.action?.payload?.to;
+              if (fromSlide && toSlide && nextPitchDeck.includes(fromSlide) && nextPitchDeck.includes(toSlide)) {
+                const fromIdx = nextPitchDeck.indexOf(fromSlide);
+                const toIdx = nextPitchDeck.indexOf(toSlide);
+                if (fromIdx < toIdx) {
+                  const temp = nextPitchDeck[fromIdx];
+                  nextPitchDeck[fromIdx] = nextPitchDeck[toIdx];
+                  nextPitchDeck[toIdx] = temp;
+                }
+              }
+            }
+          } else if (actionType === 'focus_segment' || actionType === 'change_biz_model') {
+            const segmentText = targetAdvice.action?.payload?.segment || 'Campus Pilot Focus';
+            nextGeneratedBusinessModels = state.generatedBusinessModels.map(m => {
+              if (m.id === state.businessModel) {
+                return {
+                  ...m,
+                  customerSegment: `${m.customerSegment} (${segmentText})`,
+                  pricingStructure: m.pricingStructure.includes("Premium") ? m.pricingStructure : `${m.pricingStructure} // Premium SaaS Admin: $49/user/mo`,
+                };
+              }
+              return m;
+            });
+          }
+
+          set({
+            generatedAdvisorAdvice: nextAdvice,
+            score: nextScore,
+            features: nextFeatures,
+            techStack: nextTechStack,
+            pitchDeck: nextPitchDeck,
+            generatedBusinessModels: nextGeneratedBusinessModels,
+            usp: nextUsp,
+          });
+
+          // 3. Regenerate elevator pitch in real time
+          const updatedState = get();
+          const nextPitch = generateCustomElevatorPitch(
+            updatedState.selectedProblem,
+            updatedState.solutionDirection,
+            updatedState.usp,
+            updatedState.features,
+            updatedState.generatedBusinessModels.find(m => m.id === updatedState.businessModel) || null,
+            updatedState.generatedAdvisorAdvice,
+            updatedState.techStack
+          );
+
+          // 4. Update mentor confidence score
+          const nextConfidence = calculateMentorConfidence(
+            updatedState.selectedProblem,
+            updatedState.solutionDirection,
+            updatedState.usp,
+            updatedState.features,
+            updatedState.techStack,
+            updatedState.pitchDeck,
+            updatedState.businessModel,
+            updatedState.generatedBusinessModels,
+            updatedState.generatedAdvisorAdvice
+          );
+
+          set({ 
+            pitchText: nextPitch,
+            mentorConfidence: nextConfidence
+          });
+        },
+
+        rejectAdvisorAdvice: (adviceId) => {
+          const state = get();
+          const nextAdvice = state.generatedAdvisorAdvice.map(adv => {
+            if (adv.id === adviceId) {
+              return { ...adv, status: 'rejected' as const };
+            }
+            return adv;
+          });
+
+          set({ generatedAdvisorAdvice: nextAdvice });
+
+          // Regenerate elevator pitch in real time
+          const updatedState = get();
+          const nextPitch = generateCustomElevatorPitch(
+            updatedState.selectedProblem,
+            updatedState.solutionDirection,
+            updatedState.usp,
+            updatedState.features,
+            updatedState.generatedBusinessModels.find(m => m.id === updatedState.businessModel) || null,
+            updatedState.generatedAdvisorAdvice,
+            updatedState.techStack
+          );
+
+          // Recalculate mentor confidence score
+          const nextConfidence = calculateMentorConfidence(
+            updatedState.selectedProblem,
+            updatedState.solutionDirection,
+            updatedState.usp,
+            updatedState.features,
+            updatedState.techStack,
+            updatedState.pitchDeck,
+            updatedState.businessModel,
+            updatedState.generatedBusinessModels,
+            updatedState.generatedAdvisorAdvice
+          );
+
+          set({ 
+            pitchText: nextPitch,
+            mentorConfidence: nextConfidence
+          });
+        },
 
         resetGame: () =>
           set(
@@ -687,6 +896,8 @@ export const useGameStore = create<GameState & GameActions>()(
           stats: state.stats,
           generatedUSPs: state.generatedUSPs,
           generatedBacklog: state.generatedBacklog,
+          generatedBusinessModels: state.generatedBusinessModels,
+          generatedAdvisorAdvice: state.generatedAdvisorAdvice,
         }),
       }
     ),

@@ -86,8 +86,8 @@ export function classifyProjectArchetype(params: {
     return {
       id: "hacker",
       name: "The Hacker",
-      subtitle: "Move Fast and Compile Things",
-      description: "You prioritized raw execution speed and absolute pragmatism. Your USP was raw velocity ('Fastest') and your code is held together by digital duct tape, inline comments, and stack overflow threads. There are probably massive memory leaks and security gaps, but the app compiles, runs, and demoes perfectly. Absolute scrappy genius.",
+      subtitle: "Move Fast and Build Things",
+      description: "You prioritized raw execution speed and absolute pragmatism. Your USP was raw velocity ('Fastest') and your code is held together by digital duct tape, inline comments, and stack overflow threads. There are probably massive memory leaks and security gaps, but the app builds, runs, and demoes perfectly. Absolute scrappy genius.",
       colorClass: "border-amber-900 bg-amber-50 text-amber-900",
       radarStats: {
         techDepth: 55,

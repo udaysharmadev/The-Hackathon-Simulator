@@ -71,7 +71,7 @@ export function evaluatePitchDeck(slides: string[]): PitchDeckEvaluation {
       score: 10,
       quality: 'Fragmented',
       archetype: 'Chaos Deck',
-      feedback: ["Deck timeline is currently empty. Slot slide components to initialize narrative compiles."],
+      feedback: ["Deck outline is currently empty. Slot slide components to initialize your presentation flow."],
       subScores: { clarity: 10, logicalFlow: 10, storytelling: 10, techDepth: 10, bizThinking: 10, persuasion: 10 }
     };
   }

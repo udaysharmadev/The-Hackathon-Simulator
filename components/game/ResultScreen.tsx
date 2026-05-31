@@ -126,15 +126,15 @@ export default function ResultScreen() {
   const [prdCopied, setPrdCopied] = useState(false);
 
   const prdLogs = [
-    "INITIALIZING_STARTUP_COMPILER_V1.0...",
-    "EXTRACTING_DECISIONS_MANIFEST...",
-    "COMPILING_ARCHETYPE_METRICS...",
-    "RESOLVING_TECH_COMPATIBILITY_LAYERS...",
-    "INTEGRATING_USP_VALUE_LOOPS...",
-    "SIMULATING_MONETIZATION_ECONOMICS...",
-    "ASSESSING_CHAOS_FALLBACK_RISKS...",
-    "GENERATING_VENTURE_PRD_MARKDOWN...",
-    "COMPILATION_SUCCESSFUL."
+    "PREPARING STARTUP BRIEF V1.0...",
+    "EXTRACTING HACKATHON BUILD DECISIONS...",
+    "ANALYZING PROJECT ARCHETYPE METRICS...",
+    "RESOLVING TECHNOLOGY INTEGRATION LAYERS...",
+    "INTEGRATING UNIQUE ADVANTAGE (USP)...",
+    "ESTIMATING REVENUE TIER ECONOMICS...",
+    "ASSESSING RISK & OPERATIONAL ROADMAP...",
+    "GENERATING PRODUCT REQUIREMENTS BRIEF...",
+    "STARTUP BRIEF SUCCESSFULLY CREATED."
   ];
 
   useEffect(() => {
@@ -332,7 +332,7 @@ export default function ResultScreen() {
       avatar: leadJudgeProfile.avatar,
       avatarImage: leadJudgeProfile.avatarImage,
       score: leadFb.score,
-      comment: loadingRoast ? "⏱️ COMPILING_DYNAMIC_JURY_ROAST_MANIFEST.EXE..." : (aiRoast || leadFb.comment),
+      comment: loadingRoast ? "⏱️ DRAWING DYNAMIC JURY FEEDBACK CRITIQUE..." : (aiRoast || leadFb.comment),
       highlight: leadFb.highlight,
       isLead: true,
     }];
@@ -386,6 +386,8 @@ export default function ResultScreen() {
           businessModel,
           problem: selectedProblem,
           solutionDirection,
+          generatedBusinessModels: useGameStore.getState().generatedBusinessModels,
+          generatedAdvisorAdvice: useGameStore.getState().generatedAdvisorAdvice,
         });
         
         results.push({
@@ -595,7 +597,7 @@ export default function ResultScreen() {
           <p className="text-[11px] text-neutral-600 font-sans font-light leading-relaxed">
             {showPrdSection 
               ? "The judges believe this project is worth exploring further. Generate a startup-grade Product Requirements Document based on your hackathon decisions."
-              : "Get a grade B or above to unlock this startup product compiler."
+              : "Get a grade B or above to unlock this startup product generator."
             }
           </p>
         </div>
@@ -612,7 +614,7 @@ export default function ResultScreen() {
               : "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
           }`}
         >
-          {showPrdSection ? "GENERATE_STARTUP_PRD.EXE" : "GENERATE_STARTUP_PRD.EXE (LOCKED)"}
+          {showPrdSection ? "DOWNLOAD STARTUP PRD" : "DOWNLOAD STARTUP PRD (LOCKED)"}
         </Button>
       </motion.div>
 
@@ -624,11 +626,11 @@ export default function ResultScreen() {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-neutral-200 pb-3">
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs text-neutral-400">PRD_MANIFEST_COMPILER</span>
+                <span className="font-mono text-xs text-neutral-450">STARTUP_PRD_GENERATOR</span>
                 <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
                   prdLoadingStep === prdLogs.length - 1 ? "bg-emerald-600 text-white" : "bg-neutral-900 text-white animate-pulse"
                 }`}>
-                  {prdLoadingStep === prdLogs.length - 1 ? "READY" : "COMPILING"}
+                  {prdLoadingStep === prdLogs.length - 1 ? "READY" : "GENERATING"}
                 </span>
               </div>
               <button
@@ -644,7 +646,7 @@ export default function ResultScreen() {
             {/* Title */}
             <div className="text-left space-y-1">
               <h2 className="text-xl font-black uppercase text-neutral-900">
-                Startup PRD Compiler
+                Startup PRD Generator
               </h2>
               <p className="text-[10px] text-muted-foreground font-mono">
                 Decisions ledger parsed into product requirements parameters.
@@ -657,22 +659,22 @@ export default function ResultScreen() {
                 /* Sequential Compilation Logs View */
                 <div className="flex-1 flex flex-col justify-center gap-4">
                   <div className="text-center font-mono text-xs text-neutral-500 uppercase tracking-widest animate-pulse mb-2">
-                    COMPILING_STARTUP_ARGUMENTS...
+                    GENERATING STARTUP BRIEF...
                   </div>
                   
                   <div className="bg-neutral-950 p-4 rounded font-mono text-[10px] text-neutral-100 min-h-[180px] flex flex-col justify-between shadow-inner">
                     <div className="space-y-1 text-left">
-                      {prdLogs.slice(0, prdLoadingStep + 1).map((log, i) => (
-                        <div key={i} className={log.includes("SUCCESSFUL") ? "text-emerald-400 font-bold" : "text-neutral-300"}>
-                          {i === prdLoadingStep ? (
-                            <span className="typewriter-cursor">
-                              {`> [SYS] ${log}`}
-                            </span>
-                          ) : (
-                            `> [SYS] ${log}`
-                          )}
-                        </div>
-                      ))}
+                        {prdLogs.slice(0, prdLoadingStep + 1).map((log, i) => (
+                          <div key={i} className={log.includes("SUCCESSFUL") || log.includes("CREATED") ? "text-emerald-400 font-bold" : "text-neutral-300"}>
+                            {i === prdLoadingStep ? (
+                              <span className="typewriter-cursor">
+                                {`> [SYSTEM] ${log}`}
+                              </span>
+                            ) : (
+                              `> [SYSTEM] ${log}`
+                            )}
+                          </div>
+                        ))}
                     </div>
                     <div className="w-full bg-neutral-800 h-1 rounded overflow-hidden mt-3">
                       <div 
@@ -726,7 +728,7 @@ export default function ResultScreen() {
                             isNote ? "bg-neutral-50 border-neutral-900 text-neutral-800" : "bg-amber-50 border-amber-500 text-amber-900"
                           }`}>
                             <span className="font-bold uppercase block mb-1">
-                              {isNote ? "💡 NOTE_MANIFEST:" : "⚠️ WARNING_MANIFEST:"}
+                              {isNote ? "💡 ORGANIZER NOTE:" : "⚠️ WARNING:"}
                             </span>
                             {renderFormattedText(compiledPrd.split("\n")[idx + 1]?.replace("> ", "") || "")}
                           </div>
@@ -748,14 +750,14 @@ export default function ResultScreen() {
                       variant="outline"
                       className="font-mono text-[10px] h-9 border border-neutral-900 cursor-pointer focus:outline-none"
                     >
-                      {prdCopied ? "[COPIED_TO_CLIPBOARD.TXT]" : "COPY_MARKDOWN.TXT"}
+                      {prdCopied ? "[COPIED TO CLIPBOARD]" : "COPY MARKDOWN"}
                     </Button>
                     <Button
                       onClick={handleDownloadPrd}
                       variant="outline"
                       className="font-mono text-[10px] h-9 border border-neutral-900 cursor-pointer focus:outline-none"
                     >
-                      DOWNLOAD_PRD.MD
+                      DOWNLOAD PRD
                     </Button>
                     <Button
                       onClick={() => {
@@ -763,7 +765,7 @@ export default function ResultScreen() {
                       }}
                       className="font-mono text-[10px] h-9 bg-neutral-900 text-white hover:bg-neutral-800 border border-neutral-900 cursor-pointer focus:outline-none"
                     >
-                      CLOSE_MANIFEST.EXE
+                      CLOSE GENERATOR
                     </Button>
                   </div>
                 </div>

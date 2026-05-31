@@ -131,7 +131,7 @@ export default function LandingPage() {
       {
         id: 'feat-2',
         name: 'Real-Time Telemetry Dashboard',
-        description: 'Sleek visual representation of the compiler pipeline outputs.',
+        description: 'Sleek visual representation of the prototype pipeline outputs.',
         effort: 'medium',
         impact: 'high',
       },
@@ -234,7 +234,7 @@ export default function LandingPage() {
             variants={itemVariants}
             className="text-xs sm:text-[13px] text-neutral-500 font-sans font-light leading-relaxed max-w-md mx-auto"
           >
-            Compile high-fidelity prototypes under strict timed constraints, navigate unexpected hardware or API incidents, and pitch to impressive specialist juries.
+            Build high-fidelity prototypes under strict timed constraints, navigate unexpected hardware or API incidents, and pitch to impressive specialist juries.
           </motion.p>
         </motion.div>
 
@@ -246,7 +246,7 @@ export default function LandingPage() {
           className="w-full max-w-md bg-white border border-neutral-300 rounded-md p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] text-left select-none relative overflow-hidden space-y-6"
         >
           <div className="absolute top-1 right-2 font-mono text-[8px] text-neutral-300 font-bold select-none">
-            CORE_ENGINE: COMPILER_V1
+            SYSTEM ENGINE: V1.2
           </div>
 
           <div className="space-y-4 font-mono">
@@ -258,7 +258,7 @@ export default function LandingPage() {
             <div className="space-y-2.5 text-[10px] leading-relaxed text-neutral-600 font-sans">
               <div className="flex gap-2.5">
                 <span className="font-mono text-neutral-900 font-bold mt-0.5">01/</span>
-                <span>Select difficulty scaling tiers (Easy to Hard), starting the global ticking compiler clock.</span>
+                <span>Select difficulty scaling tiers (Easy to Hard), starting the global ticking hackathon clock.</span>
               </div>
               <div className="flex gap-2.5">
                 <span className="font-mono text-neutral-900 font-bold mt-0.5">02/</span>
@@ -280,7 +280,7 @@ export default function LandingPage() {
             onMouseEnter={playSubtleHover}
             className="w-full h-11 bg-neutral-900 text-white hover:bg-neutral-850 font-bold tracking-wider rounded border border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 focus-visible:outline-none flex items-center justify-center gap-2 cursor-pointer transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
           >
-            INITIALIZE_SIMULATION.SH
+            START HACKATHON
             <ChevronRight className="w-4 h-4" />
           </Button>
 
@@ -289,7 +289,7 @@ export default function LandingPage() {
               onClick={handleDebugSkip}
               className="mt-3 w-full text-center font-mono text-[9px] text-amber-500 hover:text-amber-600 font-bold uppercase transition-colors cursor-pointer border border-dashed border-amber-300 py-1.5 rounded hover:bg-[#fffbeb] transition-all duration-150"
             >
-              🛠️ SKIP_TO_RESULTS_DEMO.EXE (DEVELOPER ONLY)
+              🛠️ SKIP TO RESULTS DEMO (DEVELOPER ONLY)
             </button>
           )}
         </motion.div>
@@ -339,7 +339,7 @@ export default function LandingPage() {
         <div className="flex items-center justify-center gap-2">
           <Terminal className="w-3 h-3 text-neutral-400" />
           <span>
-            THE HACKATHON SIMULATOR v1.2 — ZERO BACKEND — 100% LOCAL COMPILER SYSTEM
+            THE HACKATHON SIMULATOR v1.2 — ZERO BACKEND — 100% LOCAL CLIENT-SIDE SYSTEM
           </span>
         </div>
       </footer>

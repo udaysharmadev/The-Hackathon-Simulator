@@ -345,7 +345,7 @@ export function generatePRD(state: GameState): string {
     userFlowContent = `
 ### Workflow A: Telemetry Sensor Logging & Relay Loop
 1. **Signal Sampling**: The physical microcontroller (ESP32/Arduino) wakes up from low-power sleep and samples soil moisture or room occupancy telemetry sensors.
-2. **Analog-to-Digital Parsing**: The chip's compiler digitizes the signal metrics.
+2. **Analog-to-Digital Parsing**: The chip's hardware digitizes the signal metrics.
 3. **Local SQLite Cache**: The digitized log is recorded to a local SQLite database to protect against connection failure.
 4. **MQTT Telemetry Push**: The board broadcasts the payload over an encrypted MQTT channel to a centralized gateway node.
 5. **Gateway Storage**: The gateway ingests the package, updates the database, and pushes the live telemetry to dashboards within 500ms.
@@ -396,13 +396,13 @@ export function generatePRD(state: GameState): string {
       } else if (tech.name.includes("AWS")) {
         justification = "Hosts our enterprise infrastructure lattice. By leveraging secure EC2 nodes, Auto-Scaling Groups, RDS database mirrors, and cloud backup systems, AWS provides 99.99% system availability profiles.";
       } else if (tech.name.includes("Docker")) {
-        justification = "Guarantees architectural reproducibility. By packaging our database migrations, backend compilers, and web servers into light container volumes, Docker ensures absolute parity between local staging and cloud production runtimes.";
+        justification = "Guarantees architectural reproducibility. By packaging our database migrations, backend runtimes, and web servers into light container volumes, Docker ensures absolute parity between local staging and cloud production runtimes.";
       } else if (tech.name.includes("Gemini") || tech.name.includes("OpenAI") || tech.name.includes("Claude")) {
         justification = `Powers our advanced semantic inference pipeline. We feed custom systems-prompts into the native ${tech.name} API using vector context injections, unlocking contextual suggestions, transcribing raw logs, and generating automated advice with absolute coherence.`;
       } else if (tech.name.includes("Arduino") || tech.name.includes("ESP32")) {
         justification = `Serves as the hardware core. Operating as a low-power microcontroller, the ${tech.name} manages analog-to-digital signal conversions, records raw sensor telemetry, and communicates with local gateway nodes via encrypted BLE protocols.`;
       } else if (registryItem) {
-        justification = `Integrated as a core ${registryItem.category} component. It plays an essential role by utilizing its tags (${registryItem.tags.join(", ")}) to optimize execution speeds and establish robust synergies within the wider compiler stack.`;
+        justification = `Integrated as a core ${registryItem.category} component. It plays an essential role by utilizing its tags (${registryItem.tags.join(", ")}) to optimize execution speeds and establish robust synergies within the wider architecture stack.`;
       }
       
       return `#### ${tech.name} (${registryItem?.category || "Infrastructure"})
@@ -486,7 +486,7 @@ export function generatePRD(state: GameState): string {
   let prodMitigation = "Ensure high-fidelity micro-interactions and leverage our proprietary USP to establish defensible user value loops.";
   
   if (state.features.length > 3) {
-    prodRisk = "Severe product scope bloat causing shipping delays and compiler lag.";
+    prodRisk = "Severe product scope bloat causing shipping delays and infrastructure lag.";
     prodMitigation = "Ruthlessly enforce feature scoping limits by moving non-critical items into the Overkill bucket, focusing purely on 2-3 Must-Have MVP flows.";
   } else if (state.features.length < 2) {
     prodRisk = "Under-scoped feature backlog failing to capture baseline consumer value.";
@@ -622,7 +622,7 @@ ${userFlowContent}
 
 ## 7. Technical Architecture
 
-Our engineering framework is designed for high modularity, leveraging the exact technologies integrated during the hackathon compile build:
+Our engineering framework is designed for high modularity, leveraging the exact technologies integrated during the hackathon prototype build:
 
 ### Frontend
 ${state.techStack.filter(t => ["Frontend", "Design / UI", "AR / VR"].includes(TECH_REGISTRY.find(r => r.id === toRegistryId(t.id))?.category || "")).map(t => `* **${t.name}**: Integrated for our UI presentation layer.`).join("\n") || "*Standard client layout framework (Next.js/React).*"}
@@ -725,10 +725,10 @@ Our competitive advantage rests on our core **Unique Selling Proposition (USP)**
 
 ## 14. Final Verdict
 
-Based on the official jury assessment of our project compile:
+Based on the official jury assessment of our project build:
 * **Final Score**: **${displayScore}/50** (Scale: 0-50)
 * **Final Grade**: **Grade ${grade}** (Jury Grade Index: S/A/B/C/D/F)
-* **Jury Evaluation**: *"${feedback?.comment || "Compiles cleanly with high market readiness."}"*
+* **Jury Evaluation**: *"${feedback?.comment || "Builds cleanly with high market readiness."}"*
 * **Project Archetype**: **${archetype.name}** (${archetype.subtitle})
 
 > [!NOTE]

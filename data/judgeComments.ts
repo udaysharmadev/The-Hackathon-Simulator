@@ -19,6 +19,8 @@ export interface ContextState {
   pitchDeckScore?: number;
   deckNarrativeQuality?: string;
   deckArchetype?: string;
+  generatedBusinessModels?: any[];
+  generatedAdvisorAdvice?: any[];
 }
 
 export interface CommentResult {
@@ -53,11 +55,38 @@ export function generateJudgeFeedback(
     (f: any) => f.dependsOn && !state.features.some(x => x.id === f.dependsOn)
   ) as any;
 
+  const appliedAdvice = state.generatedAdvisorAdvice ? state.generatedAdvisorAdvice.filter(a => a.status === 'applied') : [];
+  const rejectedAdvice = state.generatedAdvisorAdvice ? state.generatedAdvisorAdvice.filter(a => a.status === 'rejected') : [];
+  const activeModel = state.generatedBusinessModels && state.businessModel ? state.generatedBusinessModels.find(m => m.id === state.businessModel) : null;
+
   // ---------------------------------------------------------
   // 1. Uday Sharma (EdTech Creator & Hackathon Specialist)
   // Focus: Speed, MVPs, EdTech, practicality, actual user validation.
   // ---------------------------------------------------------
   if (judgeId === "judge-builder") {
+    const ignoredTechRefactor = rejectedAdvice.some(a => a.id === 'adv-replace-tech');
+    if (ignoredTechRefactor) {
+      return {
+        comment: "Building massive infrastructure like Kubernetes or Spring Boot for a student app is absurd. The team ignored engineering advice and built infrastructure instead of a product.",
+        highlight: "Ignored backend engineering advice and built infrastructure instead of product."
+      };
+    }
+
+    const ignoredScopePrune = rejectedAdvice.some(a => a.id === 'adv-reduce-scope');
+    if (ignoredScopePrune) {
+      return {
+        comment: "The team ignored multiple warnings about scope creep, resulting in a cluttered, un-finishable presentation deck.",
+        highlight: "Ignored backlog pruning advice, leading to scope creep."
+      };
+    }
+
+    if (appliedAdvice.length > 0 && Math.random() > 0.4) {
+      return {
+        comment: "The team clearly listened to strategic co-founder feedback. Structuring your feature prioritization around active recommendations helped secure a highly stable prototype build.",
+        highlight: "Refined backlog based on co-founder advice."
+      };
+    }
+
     if (state.pitchDeck) {
       const demoIdx = state.pitchDeck.indexOf('demo');
       if (demoIdx !== -1 && demoIdx > 4) {
@@ -117,6 +146,13 @@ export function generateJudgeFeedback(
   // Focus: Startup potential, PMF, customer discovery, differentiation.
   // ---------------------------------------------------------
   if (judgeId === "judge-founder") {
+    if (activeModel && Math.random() > 0.3) {
+      return {
+        comment: `Excellent startup potential! Monetizing with the '${activeModel.name}' model targeting '${activeModel.customer}' is a high-margin wedge. Pricing at '${activeModel.pricingStructure.split(" // ")[0]}' feels extremely realistic for initial product-market validation.`,
+        highlight: `Outstanding business strategy: ${activeModel.name}`
+      };
+    }
+
     if (state.deckArchetype === 'Engineer Deck') {
       return {
         comment: "The presentation focused heavily on implementation but never clearly explained the problem. Who is the customer and why do they desperately need this? Judges need stronger business validation.",
@@ -198,6 +234,13 @@ export function generateJudgeFeedback(
   // Focus: Monetization models, scalability, demand, sustainable revenue, risks.
   // ---------------------------------------------------------
   if (judgeId === "judge-investor") {
+    if (activeModel && Math.random() > 0.3) {
+      return {
+        comment: `Excellent unit economics! Structuring the business strategy as a '${activeModel.name}' B2B license targeting '${activeModel.customerSegment}' shows thorough market discovery. The growth roadmap of '${activeModel.growthStrategy}' offers a highly defensible customer acquisition wedge.`,
+        highlight: `Defensible commercial scaling strategy: ${activeModel.name}`
+      };
+    }
+
     if (state.pitchDeck) {
       const bizSlides = state.pitchDeck.filter(s => {
         const comp = AVAILABLE_SLIDES.find(item => item.id === s);
@@ -263,7 +306,7 @@ export function generateJudgeFeedback(
     }
     if (state.deckArchetype === 'Engineer Deck') {
       return {
-        comment: "The technical architecture was excellent but difficult for non-technical judges to follow. You focused heavily on framework compile times but omitted human story context.",
+        comment: "The technical architecture was excellent but difficult for non-technical judges to follow. You focused heavily on developer-centric build performance but omitted human story context.",
         highlight: "The technical architecture was excellent but difficult for non-technical judges to follow."
       };
     }
@@ -278,7 +321,7 @@ export function generateJudgeFeedback(
     if (score >= 90) {
       if (hasHardware) {
         return {
-          comment: "Exceptional engineering discipline! Your low-level serial registers are beautifully managed, the firmware compiles flawlessly without memory leaks, and the system is logically structured.",
+          comment: "Exceptional engineering discipline! Your low-level serial registers are beautifully managed, the firmware runs flawlessly without memory leaks, and the system is logically structured.",
           highlight: "Flawless embedded systems integration with proper data registers."
         };
       }

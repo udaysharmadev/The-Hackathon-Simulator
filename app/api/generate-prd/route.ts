@@ -1,7 +1,7 @@
 /**
  * @fileoverview Next.js API Route for live AI-powered PRD generation.
  * Hooks into Google Gemini API using native fetch (zero package weight) to
- * procedurally compile high-fidelity, customized startup documentation.
+ * procedurally generate high-fidelity, customized startup documentation.
  *
  * @module app/api/generate-prd/route
  */
@@ -94,8 +94,8 @@ export async function POST(req: Request) {
     if (!openaiKey && !openRouterKey && !geminiKey) {
       const fallbackMarkdown = generatePRD(state);
       const notice = `> [premium]
-> **AI_API_COMPILATION_OFFLINE // DEMO MODE ACTIVE:**
-> To unlock infinite AI-powered startup compilations, configure an **\`OPENAI_API_KEY\`**, **\`OPENROUTER_API_KEY\`**, or **\`GEMINI_API_KEY\`** in a **\`.env.local\`** file inside the repository root. Showing procedurally compiled high-fidelity document:
+> **AI_API_GENERATION_OFFLINE // DEMO MODE ACTIVE:**
+> To unlock infinite AI-powered startup briefs, configure an **\`OPENAI_API_KEY\`**, **\`OPENROUTER_API_KEY\`**, or **\`GEMINI_API_KEY\`** in a **\`.env.local\`** file inside the repository root. Showing procedurally generated high-fidelity document:
 
 \n\n${fallbackMarkdown}`;
       
@@ -704,12 +704,12 @@ Return only the final PRD.`;
     return NextResponse.json({ markdown: cleanedText });
 
   } catch (error: any) {
-    console.error("PRD compile error:", error);
+    console.error("PRD generation error:", error);
     // Secure fallback in case of network drops
     const fallbackMarkdown = generatePRD(state);
     const notice = `> [!WARNING]
-> **AI_API_COMPILATION_FAILED // FALLBACK ACTIVE:**
-> Encountered a network connection error (${error.message || "API Timeout"}). Rerouting compile to local procedural generator:
+> **AI_API_GENERATION_FAILED // FALLBACK ACTIVE:**
+> Encountered a network connection error (${error.message || "API Timeout"}). Rerouting document generation to local procedural generator:
 
 \n\n${fallbackMarkdown}`;
 

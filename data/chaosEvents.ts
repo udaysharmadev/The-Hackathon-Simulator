@@ -12,13 +12,13 @@ export const CHAOS_EVENTS: ChaosEvent[] = [
   {
     id: "tech-api-rate",
     title: "API Rate Limit Hit",
-    description: "The third-party model API you planned to use just rate-limited your sandbox access. The static pipeline compiler is dropping queries.",
+    description: "The third-party model API you planned to use just rate-limited your sandbox access. The static data pipelines are dropping queries.",
     category: "technical",
     weight: 10,
     choices: [
       {
         label: "Simplify Features",
-        description: "Strip out real-time queries. Compile static mock pipelines instead.",
+        description: "Strip out real-time queries. Build static mock pipelines instead.",
         effectText: "Execution +15, Innovation -10, Time remaining +30s",
         modifiers: { execution: 15, innovation: -10, timeOffset: 30 }
       },
@@ -104,7 +104,7 @@ export const CHAOS_EVENTS: ChaosEvent[] = [
     choices: [
       {
         label: "Execute Pivot",
-        description: "Pivot the MVP now! Re-compile under a brand-new startup direction.",
+        description: "Pivot the MVP now! Re-orient under a brand-new startup direction.",
         effectText: "Innovation +25, Execution -20, Design -10",
         modifiers: { innovation: 25, execution: -20, design: -10 }
       },
@@ -125,7 +125,7 @@ export const CHAOS_EVENTS: ChaosEvent[] = [
     choices: [
       {
         label: "Proceed Blindly",
-        description: "Keep compiling the project according to current specifications without external feedback.",
+        description: "Keep building the project according to current specifications without external feedback.",
         effectText: "Execution +5, Innovation +5",
         modifiers: { execution: 5, innovation: 5 }
       },
@@ -142,7 +142,7 @@ export const CHAOS_EVENTS: ChaosEvent[] = [
   {
     id: "lucky-sponsor-api",
     title: "Sponsor API Unlocked",
-    description: "Sponsors have released a highly optimized sandbox API with stellar local compile wrappers.",
+    description: "Sponsors have released a highly optimized sandbox API with stellar local development wrappers.",
     category: "lucky",
     weight: 10,
     choices: [
@@ -154,7 +154,7 @@ export const CHAOS_EVENTS: ChaosEvent[] = [
       },
       {
         label: "Ignore (Stay Lean)",
-        description: "Stay focused on your active pipeline configuration to avoid compile complexity.",
+        description: "Stay focused on your active architecture configuration to avoid build complexity.",
         effectText: "Execution +10, Time remaining +15s",
         modifiers: { execution: 10, timeOffset: 15 }
       }
@@ -219,7 +219,7 @@ export const CHAOS_EVENTS: ChaosEvent[] = [
       },
       {
         label: "Focus on Features Demo",
-        description: "Eject slides and perform a fast, direct interface compilation walkthrough.",
+        description: "Eject slides and perform a fast, direct prototype walkthrough.",
         effectText: "Execution +12, Pitch +8, Time remaining -20s",
         modifiers: { execution: 12, pitch: 8, timeOffset: -20 }
       }
