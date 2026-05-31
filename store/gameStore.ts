@@ -319,10 +319,30 @@ export const useGameStore = create<GameState & GameActions>()(
         },
 
         selectProblem: (problem) =>
-          set({ selectedProblem: problem }, false, 'core/selectProblem'),
+          set({ 
+            selectedProblem: problem,
+            usp: null,
+            features: [],
+            generatedUSPs: [],
+            generatedBacklog: [],
+            generatedBusinessModels: [],
+            generatedAdvisorAdvice: [],
+            businessModel: null,
+            pitchText: "",
+          }, false, 'core/selectProblem'),
 
         setSolutionDirection: (direction) =>
-          set({ solutionDirection: direction }, false, 'core/setSolutionDirection'),
+          set({ 
+            solutionDirection: direction,
+            usp: null,
+            features: [],
+            generatedUSPs: [],
+            generatedBacklog: [],
+            generatedBusinessModels: [],
+            generatedAdvisorAdvice: [],
+            businessModel: null,
+            pitchText: "",
+          }, false, 'core/setSolutionDirection'),
 
         addTechItem: (item) =>
           set(
