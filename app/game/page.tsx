@@ -741,8 +741,8 @@ function ProblemRevealStage() {
     let apiSuccess = false;
     let generatedProblemObj: any = null;
 
-    // Call dynamic API behind the scenes if under the 3 spins limit
-    if (apiShuffleCount < 3) {
+    // Call dynamic API behind the scenes if under the 4 spins limit (initial + 3 manual draws)
+    if (apiShuffleCount < 4) {
       try {
         const res = await fetch("/api/generate-problem", {
           method: "POST",
@@ -811,18 +811,7 @@ function ProblemRevealStage() {
           ⏱️ STATUS: READY // THE TIMER WILL START AS SOON AS YOU ACCEPT A CHALLENGE.
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="font-mono text-[9px] font-bold uppercase select-none">
-            {apiShuffleCount < 3 ? (
-              <span className="text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded animate-pulse">
-                🤖 AI Generator: {3 - apiShuffleCount} spins left
-              </span>
-            ) : (
-              <span className="text-neutral-500 bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded">
-                📦 Archive Database Active
-              </span>
-            )}
-          </div>
+        <div className="flex justify-end">
           <Button
             size="xs"
             variant="outline"
