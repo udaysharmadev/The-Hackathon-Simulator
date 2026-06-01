@@ -192,8 +192,8 @@ export async function POST(req: Request) {
     const localRoastText = generateLocalRoast(payload);
 
     // Skip external fetch if key is a known fake placeholder or entirely missing
-    const isMockOpenaiKey = openaiKey?.startsWith("sk-proj-Cj5z-w7Gu") || !openaiKey;
-    if ((isMockOpenaiKey || !openaiKey) && !openRouterKey && !geminiKey) {
+    const isMockOpenaiKey = !openaiKey || openaiKey.includes("YOUR_KEY") || openaiKey.includes("placeholder") || openaiKey === "your-api-key" || openaiKey.length < 20;
+    if (isMockOpenaiKey && !openRouterKey && !geminiKey) {
       return NextResponse.json({ roast: localRoastText, fallbackUsed: true });
     }
 
