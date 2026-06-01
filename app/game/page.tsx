@@ -919,6 +919,9 @@ function SolutionDirectionStage() {
 function TechStackStage() {
   const { techStack, addTechItem, removeTechItem, updateScore, solutionDirection, usp, primaryUsp, generatedUSPs, selectedProblem, setActiveTechTab } = useGameStore();
 
+  // Get active contextual template based on chosen solution direction
+  const activeTemplate = ARCHITECTURE_TEMPLATES[solutionDirection || 'web-app'] || ARCHITECTURE_TEMPLATES['web-app'];
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -966,14 +969,34 @@ function TechStackStage() {
     }
   };
 
+  // Synchronize active tab to the selected slot's compatible category
+  useEffect(() => {
+    if (!selectedSlotId || !activeTemplate) return;
+    const slot = activeTemplate.slots.find(s => s.id === selectedSlotId);
+    if (slot) {
+      const targetTab = getTabForSlot(slot);
+      if (targetTab !== 'all') {
+        setActiveTab(targetTab);
+      }
+    }
+  }, [selectedSlotId, activeTemplate]);
+
+  // Auto-advance if currently selected slot gets filled externally (e.g. teammate advice applied)
+  useEffect(() => {
+    if (!selectedSlotId || !activeTemplate) return;
+    const isCurrentSlotFilled = techStack.some(t => t.category === selectedSlotId);
+    if (isCurrentSlotFilled) {
+      autoAdvanceToNextSlot(selectedSlotId, techStack);
+    }
+  }, [techStack, selectedSlotId, activeTemplate]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
   const selectedIds = new Set(techStack.map((t) => t.id));
 
-  // Get active contextual template based on chosen solution direction
-  const activeTemplate = ARCHITECTURE_TEMPLATES[solutionDirection || 'web-app'] || ARCHITECTURE_TEMPLATES['web-app'];
+  // activeTemplate is declared at the top of TechStackStage
 
   // Initialize selected slot ID to first slot in the active template
   useEffect(() => {
@@ -1838,7 +1861,7 @@ function UspStage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="max-w-md mx-auto">
             {/* Column 1: Ask Strategist/Product advice */}
             <div className="p-3 bg-neutral-950 border border-neutral-850 rounded flex flex-col justify-between text-left space-y-3">
               <div className="space-y-1">
@@ -1892,81 +1915,6 @@ function UspStage() {
                   </div>
                 );
               })()}
-            </div>
-
-            {/* Column 2: Cast a Crew-wide Poll Vote */}
-            <div className="p-3 bg-neutral-950 border border-neutral-850 rounded flex flex-col justify-between text-left space-y-3">
-              <div className="space-y-1">
-                <span className="text-[8px] text-emerald-500 font-bold uppercase tracking-wide block font-mono">🗳️ TRIGGER CREW-WIDE POLL</span>
-                <p className="text-[9px] text-neutral-400 font-light font-sans leading-relaxed">
-                  Select a unique advantage and assign it as Primary or Secondary to run a customized crew-wide alignment poll.
-                </p>
-              </div>
-
-              <div className="space-y-2.5">
-                {/* USP Selection Dropdown */}
-                <div className="space-y-1">
-                  <label className="text-[7.5px] text-neutral-400 font-bold uppercase block tracking-wider font-mono">SELECT USP TO VOTE ON:</label>
-                  <select
-                    value={selectedUspToVote}
-                    onChange={(e) => setSelectedUspToVote(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-850 text-white rounded px-2 py-1 text-[9px] font-mono focus:outline-none focus:border-emerald-600 tracking-wide"
-                  >
-                    {generatedUSPs.map((u) => (
-                      <option key={u.key || u.name} value={u.name} className="bg-neutral-950 text-white font-mono">
-                        {u.name.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Role Switch: Primary vs Secondary */}
-                <div className="space-y-1">
-                  <label className="text-[7.5px] text-neutral-400 font-bold uppercase block tracking-wider font-mono">ASSIGN USP ROLE FOR POLL:</label>
-                  <div className="flex gap-1 border border-neutral-850 p-0.5 rounded bg-neutral-900">
-                    <button
-                      type="button"
-                      onClick={() => setVoteRole('primary')}
-                      className={`flex-1 py-1 rounded text-[8px] font-bold font-mono tracking-wider transition-all duration-150 border-none cursor-pointer uppercase ${
-                        voteRole === 'primary' 
-                          ? 'bg-emerald-600 text-white shadow-sm' 
-                          : 'bg-transparent text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      Primary USP
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setVoteRole('secondary')}
-                      className={`flex-1 py-1 rounded text-[8px] font-bold font-mono tracking-wider transition-all duration-150 border-none cursor-pointer uppercase ${
-                        voteRole === 'secondary' 
-                          ? 'bg-amber-600 text-white shadow-sm' 
-                          : 'bg-transparent text-neutral-400 hover:text-white'
-                      }`}
-                    >
-                      Secondary USP
-                    </button>
-                  </div>
-                </div>
-
-                <Button
-                  size="xs"
-                  onClick={() => {
-                    playMutedClick();
-                    triggerCrewVote('usp', selectedUspToVote, voteRole);
-                  }}
-                  disabled={!selectedUspToVote}
-                  className="w-full bg-emerald-600 text-white hover:bg-emerald-500 border-none font-bold text-[8.5px] font-mono tracking-wider uppercase h-7 cursor-pointer"
-                >
-                  ⚡ INITIATE CREW VOTE
-                </Button>
-
-                {hasCrewVotedThisStage[stage] && (
-                  <div className="text-center font-bold text-[7.5px] text-emerald-400 uppercase tracking-widest font-mono pt-1 animate-pulse">
-                    ✓ LAST POLL RECORDED IN CHAT FEED (+5 POINT PITCH BONUS LOCKED)
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>
@@ -3087,12 +3035,12 @@ function BusinessModelStage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="max-w-md mx-auto">
               {/* Column 1: Ask Strategist/Product advice */}
               <div className="p-3 bg-neutral-950 border border-neutral-850 rounded flex flex-col justify-between text-left space-y-3">
                 <div className="space-y-1">
                   <span className="text-[8px] text-amber-500 font-bold uppercase tracking-wide block font-mono">💬 CONSULT TEAM SPECIALIST</span>
-                  <p className="text-[9px] text-neutral-400 font-light font-sans leading-relaxed">
+                  <p className="text-[9px] text-neutral-450 font-light font-sans leading-relaxed">
                     Ask a Product Strategist, Designer, or Researcher to evaluate choices and deliver custom, inline recommendations.
                   </p>
                 </div>
@@ -3141,52 +3089,6 @@ function BusinessModelStage() {
                     </div>
                   );
                 })()}
-              </div>
-
-              {/* Column 2: Cast a Crew-wide Poll Vote */}
-              <div className="p-3 bg-neutral-950 border border-neutral-850 rounded flex flex-col justify-between text-left space-y-3">
-                <div className="space-y-1">
-                  <span className="text-[8px] text-emerald-500 font-bold uppercase tracking-wide block font-mono">🗳️ TRIGGER CREW-WIDE POLL</span>
-                  <p className="text-[9px] text-neutral-400 font-light font-sans leading-relaxed">
-                    Select a business model option to trigger an immediate, role-specific crew poll on its commercial viability.
-                  </p>
-                </div>
-
-                <div className="space-y-2.5">
-                  {/* Model Selection Dropdown */}
-                  <div className="space-y-1">
-                    <label className="text-[7.5px] text-neutral-400 font-bold uppercase block tracking-wider font-mono">SELECT STRATEGY TO VOTE ON:</label>
-                    <select
-                      value={selectedModelToVote}
-                      onChange={(e) => setSelectedModelToVote(e.target.value)}
-                      className="w-full bg-neutral-900 border border-neutral-850 text-white rounded px-2 py-1 text-[9px] font-mono focus:outline-none focus:border-emerald-600 tracking-wide"
-                    >
-                      {generatedBusinessModels.map((m) => (
-                        <option key={m.id} value={m.id} className="bg-neutral-950 text-white font-mono">
-                          {m.name.toUpperCase()}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <Button
-                    size="xs"
-                    onClick={() => {
-                      playMutedClick();
-                      triggerCrewVote('businessModel', selectedModelToVote);
-                    }}
-                    disabled={!selectedModelToVote}
-                    className="w-full bg-emerald-600 text-white hover:bg-emerald-500 border-none font-bold text-[8.5px] font-mono tracking-wider uppercase h-7 cursor-pointer"
-                  >
-                    ⚡ INITIATE CREW VOTE
-                  </Button>
-
-                  {hasCrewVotedThisStage[stage] && (
-                    <div className="text-center font-bold text-[7.5px] text-emerald-400 uppercase tracking-widest font-mono pt-1 animate-pulse">
-                      ✓ LAST POLL RECORDED IN CHAT FEED (+5 POINT PITCH BONUS LOCKED)
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
@@ -5614,9 +5516,9 @@ function ProjectHealthDashboard() {
 function PersistentTeamPanel({
   team, playerName, playerAvatar, activeTeamTab, setActiveTeamTab,
   teamChatMessages, unreadChatCount, activeTeammateAdvice, clearUnreadChatCount,
-  resolveTeamChatMessageChoice, useTeammateHelp, stage, state, getMessageTypeBadge
+  resolveTeamChatMessageChoice, useTeammateHelp, stage, state, getMessageTypeBadge,
+  isMinimized, setIsMinimized
 }: any) {
-  const [isMinimized, setIsMinimized] = useState(false);
   const { applyTeammateAdvice, rejectTeammateAdvice } = useGameStore();
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -5689,10 +5591,18 @@ function PersistentTeamPanel({
     }
   }, [state.generatedBusinessModels, selectedModelToVote]);
 
-  // Auto-scroll to newest message
+  // Auto-scroll to newest message with double-deferred triggers to avoid dynamic rendering races
   useEffect(() => {
     if (!isMinimized && activeTeamTab === 'chat') {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      const scroll = () => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      };
+      const timer1 = setTimeout(scroll, 50);
+      const timer2 = setTimeout(scroll, 250);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
     }
   }, [teamChatMessages.length, activeTeamTab, isMinimized]);
 
@@ -5714,7 +5624,7 @@ function PersistentTeamPanel({
     <div
       className={cn(
         "fixed left-0 top-14 bottom-8 z-40 flex flex-col bg-white border-r border-neutral-200 shadow-lg font-mono select-none transition-all duration-300",
-        isMinimized ? "w-10" : "w-72"
+        isMinimized ? "w-10" : "w-[460px]"
       )}
     >
       {/* Panel Header */}
@@ -6342,6 +6252,7 @@ export default function GamePage() {
 
   const [isTeamDrawerOpen, setIsTeamDrawerOpen] = useState(false);
   const [activeTeamTab, setActiveTeamTab] = useState<'crew' | 'chat'>('crew');
+  const [isTeamMinimized, setIsTeamMinimized] = useState(false);
 
   const getMessageTypeBadge = (type?: string) => {
     switch (type) {
@@ -6458,9 +6369,16 @@ export default function GamePage() {
 
   const showTeamPanel = selectedProblem && stage !== 'results' && stage !== 'teamFormation';
 
+  const contentPaddingClass = showTeamPanel 
+    ? (isTeamMinimized ? "pl-14 pr-4" : "pl-[480px] pr-8")
+    : "px-4";
+
   return (
     <GameLayout>
-      <div className="relative w-full h-full min-h-screen pb-16">
+      <div className={cn(
+        "relative w-full h-full min-h-screen pb-16 transition-all duration-300",
+        contentPaddingClass
+      )}>
         {selectedProblem && stage !== 'results' && <ProjectHealthDashboard />}
         {selectedProblem && stage !== 'results' && <TeammateAdviceNotification />}
         
@@ -6487,6 +6405,8 @@ export default function GamePage() {
             stage={stage}
             state={state}
             getMessageTypeBadge={getMessageTypeBadge}
+            isMinimized={isTeamMinimized}
+            setIsMinimized={setIsTeamMinimized}
           />
         )}
 
