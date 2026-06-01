@@ -5168,6 +5168,7 @@ function DevDebugPanel() {
     resumeTimer,
     resetGame,
     nextStage,
+    hasFinishedOnce
   } = useGameStore();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -5183,7 +5184,7 @@ function DevDebugPanel() {
         onClick={() => setIsOpen(true)}
         className="fixed bottom-8 right-6 z-50 flex items-center gap-1.5 px-3 py-2 rounded-md bg-neutral-950 text-white border border-neutral-850 shadow-lg text-[10px] font-bold uppercase tracking-wider hover:bg-neutral-900 transition-all cursor-pointer font-mono"
       >
-        🛠️ DEV_DEBUG_PANEL
+        🛠️ TIME MACHINE & STATS
       </button>
     );
   }
@@ -5191,9 +5192,12 @@ function DevDebugPanel() {
   return (
     <div className="fixed bottom-8 right-6 z-50 w-72 bg-card border border-neutral-400 rounded-lg shadow-xl p-4 font-mono text-xs">
       <div className="flex items-center justify-between border-b border-border pb-2 mb-2 font-bold text-neutral-900">
-        <span>DEV_DEBUG_PANEL</span>
+        <span>🛠️ TIME PORTAL & STATS</span>
         <button onClick={() => setIsOpen(false)} className="hover:text-red-500 font-bold cursor-pointer">[X]</button>
       </div>
+      <p className="text-[8.5px] text-neutral-500 leading-tight mb-3 italic font-sans">
+        💡 Use this Time Machine to jump back to any selection stage to refine your tech, adjust features, or optimize your USP/Business Model to improve your final score!
+      </p>
 
       <div className="space-y-1 text-[11px] mb-3 text-neutral-700">
         <div>STAGE: <span className="font-bold text-neutral-900">{stage}</span></div>
@@ -5271,7 +5275,13 @@ function DevDebugPanel() {
           onChange={(e) => jumpToStage(e.target.value as GameStage)}
           className="w-full bg-white border border-border text-[11px] rounded p-1"
         >
-          {STAGE_ORDER.map((s) => (
+          {STAGE_ORDER.filter((s) => {
+            const isEvaluationStage = ['judgeSpin', 'judging', 'results'].includes(s);
+            if (isEvaluationStage) {
+              return hasFinishedOnce || stage === 'results';
+            }
+            return true;
+          }).map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
@@ -5555,7 +5565,7 @@ function ProjectHealthDashboard() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto mb-4 p-3 bg-neutral-900 border border-neutral-950 text-white rounded-md shadow-md font-mono text-[10px]">
+    <div className="max-w-4xl mx-auto mb-4 p-3 bg-neutral-950/80 backdrop-blur-md border border-neutral-800/60 text-white rounded-md shadow-[0_12px_40px_rgba(0,0,0,0.25)] font-mono text-[10px] sticky top-2 z-30 transition-all duration-300">
       <div className="flex items-center justify-between border-b border-neutral-800 pb-1.5 mb-2">
         <span className="text-neutral-400 font-bold uppercase tracking-wider">▲ PROJECT HEALTH MONITOR</span>
         <span className="text-neutral-500 text-[8px] animate-pulse">● LIVE TELEMETRY</span>
@@ -5868,142 +5878,6 @@ function PersistentTeamPanel({
               </div>
             ) : (
               <div className="p-2 space-y-2">
-                {/* Crew Collaboration Actions in Chat Panel */}
-                {(stage === 'usp' || stage === 'businessModel') && (
-                  <div className="p-2 border border-neutral-800 rounded-md bg-neutral-950 text-white space-y-2 mb-2 select-none text-[8.5px] font-mono">
-                    <div className="flex items-center justify-between border-b border-neutral-800 pb-1 uppercase tracking-wider text-amber-500 font-bold">
-                      <span>⚡ CREW COLLABORATION BOARD</span>
-                      <span className="text-[7.5px] bg-neutral-900 text-neutral-400 px-1 py-0.2 rounded font-normal font-sans tracking-normal">
-                        STAGE: {stage === 'usp' ? 'USP' : 'BIZ MODEL'}
-                      </span>
-                    </div>
-
-                    <div className="flex gap-1.5 border-b border-neutral-800 pb-1.5">
-                      {/* Consult Specialist Button */}
-                      {(() => {
-                        const strategistTeammate = team.find((t: any) => {
-                          const r = (t.role || "").toLowerCase();
-                          return r.includes('strategist') || r.includes('founder') || r.includes('business') || r.includes('designer') || r.includes('ux') || r.includes('researcher');
-                        });
-
-                        if (strategistTeammate) {
-                          const hasAdvice = !!activeTeammateAdvice[strategistTeammate.id];
-                          return (
-                            <button
-                              disabled={strategistTeammate.helpTokenUsed || hasAdvice}
-                              onClick={() => {
-                                playMutedClick();
-                                useTeammateHelp(strategistTeammate.id, stage);
-                              }}
-                              className="flex-1 bg-amber-500 text-neutral-950 font-bold uppercase tracking-wider rounded border-none py-1 hover:bg-amber-400 disabled:opacity-50 text-[8px] cursor-pointer"
-                            >
-                              {hasAdvice ? "PENDING..." : strategistTeammate.helpTokenUsed ? "USED" : `CONSULT ${strategistTeammate.name.toUpperCase()}`}
-                            </button>
-                          );
-                        }
-                        return (
-                          <button
-                            disabled
-                            className="flex-1 bg-neutral-800 text-neutral-500 rounded border-none py-1 text-[7.5px] cursor-not-allowed"
-                            title="No specialist in crew"
-                          >
-                            🔒 NO SPECIALIST
-                          </button>
-                        );
-                      })()}
-                    </div>
-
-                    {stage === 'usp' ? (
-                      <div className="space-y-1.5 pt-0.5">
-                        <div className="space-y-0.5">
-                          <span className="text-[7px] text-neutral-400 uppercase tracking-wider block font-bold">SELECT USP TO VOTE ON:</span>
-                          <select
-                            value={selectedUspToVote}
-                            onChange={(e) => setSelectedUspToVote(e.target.value)}
-                            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded px-1.5 py-0.5 text-[8px] font-mono focus:outline-none focus:border-emerald-600"
-                          >
-                            {(state.generatedUSPs || []).map((u: any) => (
-                              <option key={u.key || u.name} value={u.name} className="bg-neutral-950 text-white font-mono">
-                                {u.name.toUpperCase()}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-0.5">
-                          <span className="text-[7px] text-neutral-400 uppercase tracking-wider block font-bold">ROLE:</span>
-                          <div className="flex gap-1 border border-neutral-855 p-0.5 rounded bg-neutral-900">
-                            <button
-                              type="button"
-                              onClick={() => setVoteRole('primary')}
-                              className={`flex-1 py-0.5 rounded text-[7.5px] font-bold font-mono tracking-wider border-none cursor-pointer uppercase ${
-                                voteRole === 'primary' 
-                                  ? 'bg-emerald-600 text-white shadow-sm' 
-                                  : 'bg-transparent text-neutral-400 hover:text-white'
-                              }`}
-                            >
-                              Primary
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setVoteRole('secondary')}
-                              className={`flex-1 py-0.5 rounded text-[7.5px] font-bold font-mono tracking-wider border-none cursor-pointer uppercase ${
-                                voteRole === 'secondary' 
-                                  ? 'bg-amber-600 text-white shadow-sm' 
-                                  : 'bg-transparent text-neutral-400 hover:text-white'
-                              }`}
-                            >
-                              Secondary
-                            </button>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            playMutedClick();
-                            const { triggerCrewVote } = useGameStore.getState();
-                            triggerCrewVote('usp', selectedUspToVote, voteRole);
-                          }}
-                          className="w-full bg-emerald-600 text-white font-bold uppercase tracking-wider rounded border-none py-1 hover:bg-emerald-500 text-[8px] cursor-pointer mt-1"
-                        >
-                          🗳️ ASK TEAM TO VOTE
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5 pt-0.5">
-                        <div className="space-y-0.5">
-                          <span className="text-[7px] text-neutral-400 uppercase tracking-wider block font-bold">SELECT STRATEGY TO VOTE ON:</span>
-                          <select
-                            value={selectedModelToVote}
-                            onChange={(e) => setSelectedModelToVote(e.target.value)}
-                            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded px-1.5 py-0.5 text-[8px] font-mono focus:outline-none focus:border-emerald-600"
-                          >
-                            {(state.generatedBusinessModels || []).map((m: any) => (
-                              <option key={m.id} value={m.id} className="bg-neutral-950 text-white font-mono">
-                                {m.name.toUpperCase()}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <button
-                          onClick={() => {
-                            playMutedClick();
-                            const { triggerCrewVote } = useGameStore.getState();
-                            triggerCrewVote('businessModel', selectedModelToVote);
-                          }}
-                          className="w-full bg-emerald-600 text-white font-bold uppercase tracking-wider rounded border-none py-1 hover:bg-emerald-500 text-[8px] cursor-pointer mt-1"
-                        >
-                          🗳️ ASK TEAM TO VOTE
-                        </button>
-                      </div>
-                    )}
-
-                    {state.hasCrewVotedThisStage && state.hasCrewVotedThisStage[stage] && (
-                      <div className="text-center font-bold text-[7px] text-emerald-400 uppercase tracking-widest font-mono pt-1 animate-pulse">
-                        ✓ POLL RESOLVED IN CHAT (+5 PTS ADDED)
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {teamChatMessages.length === 0 ? (
                   <div className="text-center py-6 text-neutral-400 text-[9px]">
                     No messages yet.
@@ -6163,6 +6037,143 @@ function PersistentTeamPanel({
                     );
                   })
                 )}
+
+                {/* Crew Collaboration Actions in Chat Panel */}
+                {(stage === 'usp' || stage === 'businessModel') && (
+                  <div className="p-2 border border-neutral-800 rounded-md bg-neutral-950 text-white space-y-2 mb-2 select-none text-[8.5px] font-mono">
+                    <div className="flex items-center justify-between border-b border-neutral-800 pb-1 uppercase tracking-wider text-amber-500 font-bold">
+                      <span>⚡ CREW COLLABORATION BOARD</span>
+                      <span className="text-[7.5px] bg-neutral-900 text-neutral-400 px-1 py-0.2 rounded font-normal font-sans tracking-normal">
+                        STAGE: {stage === 'usp' ? 'USP' : 'BIZ MODEL'}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-1.5 border-b border-neutral-800 pb-1.5">
+                      {/* Consult Specialist Button */}
+                      {(() => {
+                        const strategistTeammate = team.find((t: any) => {
+                          const r = (t.role || "").toLowerCase();
+                          return r.includes('strategist') || r.includes('founder') || r.includes('business') || r.includes('designer') || r.includes('ux') || r.includes('researcher');
+                        });
+
+                        if (strategistTeammate) {
+                          const hasAdvice = !!activeTeammateAdvice[strategistTeammate.id];
+                          return (
+                            <button
+                              disabled={strategistTeammate.helpTokenUsed || hasAdvice}
+                              onClick={() => {
+                                playMutedClick();
+                                useTeammateHelp(strategistTeammate.id, stage);
+                              }}
+                              className="flex-1 bg-amber-500 text-neutral-950 font-bold uppercase tracking-wider rounded border-none py-1 hover:bg-amber-400 disabled:opacity-50 text-[8px] cursor-pointer"
+                            >
+                              {hasAdvice ? "PENDING..." : strategistTeammate.helpTokenUsed ? "USED" : `CONSULT ${strategistTeammate.name.toUpperCase()}`}
+                            </button>
+                          );
+                        }
+                        return (
+                          <button
+                            disabled
+                            className="flex-1 bg-neutral-800 text-neutral-500 rounded border-none py-1 text-[7.5px] cursor-not-allowed"
+                            title="No specialist in crew"
+                          >
+                            🔒 NO SPECIALIST
+                          </button>
+                        );
+                      })()}
+                    </div>
+
+                    {stage === 'usp' ? (
+                      <div className="space-y-1.5 pt-0.5">
+                        <div className="space-y-0.5">
+                          <span className="text-[7px] text-neutral-400 uppercase tracking-wider block font-bold">SELECT USP TO VOTE ON:</span>
+                          <select
+                            value={selectedUspToVote}
+                            onChange={(e) => setSelectedUspToVote(e.target.value)}
+                            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded px-1.5 py-0.5 text-[8px] font-mono focus:outline-none focus:border-emerald-600"
+                          >
+                            {(state.generatedUSPs || []).map((u: any) => (
+                              <option key={u.key || u.name} value={u.name} className="bg-neutral-950 text-white font-mono">
+                                {u.name.toUpperCase()}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-0.5">
+                          <span className="text-[7px] text-neutral-400 uppercase tracking-wider block font-bold">ROLE:</span>
+                          <div className="flex gap-1 border border-neutral-855 p-0.5 rounded bg-neutral-900">
+                            <button
+                              type="button"
+                              onClick={() => setVoteRole('primary')}
+                              className={`flex-1 py-0.5 rounded text-[7.5px] font-bold font-mono tracking-wider border-none cursor-pointer uppercase ${
+                                voteRole === 'primary' 
+                                  ? 'bg-emerald-600 text-white shadow-sm' 
+                                  : 'bg-transparent text-neutral-400 hover:text-white'
+                              }`}
+                            >
+                              Primary
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setVoteRole('secondary')}
+                              className={`flex-1 py-0.5 rounded text-[7.5px] font-bold font-mono tracking-wider border-none cursor-pointer uppercase ${
+                                voteRole === 'secondary' 
+                                  ? 'bg-amber-600 text-white shadow-sm' 
+                                  : 'bg-transparent text-neutral-400 hover:text-white'
+                              }`}
+                            >
+                              Secondary
+                            </button>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            playMutedClick();
+                            const { triggerCrewVote } = useGameStore.getState();
+                            triggerCrewVote('usp', selectedUspToVote, voteRole);
+                          }}
+                          className="w-full bg-emerald-600 text-white font-bold uppercase tracking-wider rounded border-none py-1 hover:bg-emerald-500 text-[8px] cursor-pointer mt-1"
+                        >
+                          🗳️ ASK TEAM TO VOTE
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5 pt-0.5">
+                        <div className="space-y-0.5">
+                          <span className="text-[7px] text-neutral-400 uppercase tracking-wider block font-bold">SELECT STRATEGY TO VOTE ON:</span>
+                          <select
+                            value={selectedModelToVote}
+                            onChange={(e) => setSelectedModelToVote(e.target.value)}
+                            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded px-1.5 py-0.5 text-[8px] font-mono focus:outline-none focus:border-emerald-600"
+                          >
+                            {(state.generatedBusinessModels || []).map((m: any) => (
+                              <option key={m.id} value={m.id} className="bg-neutral-950 text-white font-mono">
+                                {m.name.toUpperCase()}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => {
+                            playMutedClick();
+                            const { triggerCrewVote } = useGameStore.getState();
+                            triggerCrewVote('businessModel', selectedModelToVote);
+                          }}
+                          className="w-full bg-emerald-600 text-white font-bold uppercase tracking-wider rounded border-none py-1 hover:bg-emerald-500 text-[8px] cursor-pointer mt-1"
+                        >
+                          🗳️ ASK TEAM TO VOTE
+                        </button>
+                      </div>
+                    )}
+
+                    {state.hasCrewVotedThisStage && state.hasCrewVotedThisStage[stage] && (
+                      <div className="text-center font-bold text-[7px] text-emerald-400 uppercase tracking-widest font-mono pt-1 animate-pulse">
+                        ✓ POLL RESOLVED IN CHAT (+5 PTS ADDED)
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Auto-scroll anchor */}
                 <div ref={chatEndRef} />
               </div>

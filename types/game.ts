@@ -283,6 +283,8 @@ export interface GameState {
   isGameStarted: boolean;
   /** Whether the game has ended */
   isGameOver: boolean;
+  /** Whether the player has ever reached the Results screen during this run */
+  hasFinishedOnce: boolean;
   /** Persisted list of achievements unlocked */
   unlockedAchievements: string[];
   /** Whether game sound is currently enabled */
