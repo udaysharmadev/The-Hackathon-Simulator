@@ -64,7 +64,7 @@ export default function DecisionCard({
       whileTap={disabled ? undefined : { scale: 0.98 }}
       className={cn(
         // Base glass card
-        'glass-card relative flex w-full cursor-pointer flex-col items-center gap-3 p-6 text-left transition-all duration-200',
+        'glass-card relative flex w-full cursor-pointer flex-col items-center gap-3 p-6 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         // Idle border hint on hover
         !selected && !disabled && BORDER_IDLE[glowColor],
         // Selected state — stronger glow + border
